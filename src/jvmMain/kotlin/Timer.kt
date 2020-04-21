@@ -94,7 +94,7 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
         if (elapsedTime >= duration) {
             scheduledTaskToTimerTaskMap
-                .filterValues { task -> task is RepeatableTask }
+                .filterValues { task -> task is RepeatableTask && task.delayInMillis < duration}
                 .filterValues { task -> task != onTickTask }
                 .forEach { (future) -> future.cancel(true) }
         }

@@ -27,6 +27,7 @@ class TimerPropertiesBuilder(private val durationInMillis: Long) {
     }
 
     fun repeatEvery(timeInMillis: Long, alert: Alert, delayInMillis: Long = timeInMillis) = apply {
+        //todo validate delay is less then duration
         val afterElapsedTimeTask = AfterElapsedTimeTask(timeInMillis, alert)
         val repeatableTask = RepeatableTask(afterElapsedTimeTask, delayInMillis)
         tasks.add(repeatableTask)
@@ -34,7 +35,11 @@ class TimerPropertiesBuilder(private val durationInMillis: Long) {
 
     // todo fun repeatEvery from .. to
 
-    // todo fun repeatEvery afterTimerElapsed
+    fun remindAfterFinish(timeInMillis: Long, alert: Alert) = apply {
+        val afterElapsedTimeTask = AfterElapsedTimeTask(timeInMillis, alert)
+        val repeatableTask = RepeatableTask(afterElapsedTimeTask, durationInMillis + timeInMillis)
+        tasks.add(repeatableTask)
+    }
 
     fun build(): TimerProperties {
         //todo validate negative numbers
