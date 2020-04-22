@@ -12,18 +12,18 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
     private val onTickTask: RepeatableTask by lazy {
         RepeatableTask(object : Task {
-            override var executionTimeInMillis: Long = 1.MILLISECONDS
+            override var executionTimeInMillis: MillisecondsTimeUnit = 1.MILLISECONDS
 
             override fun execute() {
                 executeOnTick()
             }
-        }, 0)
+        }, 0.MILLISECONDS)
     }
 
-    val duration: Long
+    val duration: MillisecondsTimeUnit
         get() = properties.durationInMillis
 
-    actual var elapsedTime: Long = 0L
+    actual var elapsedTime = 0.MILLISECONDS
 
     actual fun start() {
         properties.tasks
@@ -67,7 +67,7 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
         for (task in tasks) {
             if (task is RepeatableTask) {
-                val nextExecutionTime = task.executionCounter * task.executionTimeInMillis + task.repeatFromTimeInMillis
+                val nextExecutionTime = task.executionTimeInMillis * task.executionCounter + task.repeatFromTimeInMillis
                 taskExecutionService.scheduleAtFixedRate(task, nextExecutionTime - elapsedTime)
             } else {
                 taskExecutionService.schedule(task, task.executionTimeInMillis - elapsedTime)
@@ -103,19 +103,24 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
     private fun ScheduledExecutorService.scheduleAtFixedRate(
         task: RepeatableTask,
-        delayInMillis: Long = task.repeatFromTimeInMillis
+        delayInMillis: MillisecondsTimeUnit = task.repeatFromTimeInMillis
     ): ScheduledFuture<*> {
 
-        return scheduleAtFixedRate({ task.execute() }, delayInMillis, task.executionTimeInMillis, MILLISECONDS)
+        return scheduleAtFixedRate(
+            { task.execute() },
+            delayInMillis.value,
+            task.executionTimeInMillis.value,
+            MILLISECONDS
+        )
             .also { scheduledTaskToTimerTaskMap[it] = task }
     }
 
     private fun ScheduledExecutorService.schedule(
         task: Task,
-        executionTimeInMillis: Long = task.executionTimeInMillis
+        executionTimeInMillis: MillisecondsTimeUnit = task.executionTimeInMillis
     ): ScheduledFuture<*> {
 
-        return schedule({ task.execute() }, executionTimeInMillis, MILLISECONDS)
+        return schedule({ task.execute() }, executionTimeInMillis.value, MILLISECONDS)
             .also { scheduledTaskToTimerTaskMap[it] = task }
     }
 }

@@ -1,7 +1,9 @@
 package tasks
 
+import MillisecondsTimeUnit
+
 interface Task {
-    val executionTimeInMillis: Long
+    val executionTimeInMillis: MillisecondsTimeUnit
 
     fun execute()
 }

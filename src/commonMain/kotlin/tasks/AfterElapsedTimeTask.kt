@@ -1,13 +1,14 @@
 package tasks
 
+import MillisecondsTimeUnit
 import alerts.Alert
 
 class AfterElapsedTimeTask(
-    executionTimeInMillis: Long,
+    executionTimeInMillis: MillisecondsTimeUnit,
     override val alert: Alert
 ) : TaskWithAlert {
 
-    override var executionTimeInMillis: Long = executionTimeInMillis
+    override var executionTimeInMillis: MillisecondsTimeUnit = executionTimeInMillis
         private set
 
     override fun execute() {

@@ -1,12 +1,14 @@
 package tasks
 
+import MillisecondsTimeUnit
+
 class RepeatableTask(
     private val task: Task,
-    val repeatFromTimeInMillis: Long,
-    val repeatTillTimeInMillis: Long? = null
+    val repeatFromTimeInMillis: MillisecondsTimeUnit,
+    val repeatTillTimeInMillis: MillisecondsTimeUnit? = null
 ) : Task by task {
 
-    var executionCounter = 0
+    var executionCounter: Int = 0
         private set
 
     override fun execute() {

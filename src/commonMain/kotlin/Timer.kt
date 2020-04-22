@@ -1,7 +1,7 @@
 expect class Timer(properties: TimerProperties) {
     val properties: TimerProperties
 
-    var elapsedTime: Long
+    var elapsedTime: MillisecondsTimeUnit
         private set
 
     var onStart: (() -> Unit)?
