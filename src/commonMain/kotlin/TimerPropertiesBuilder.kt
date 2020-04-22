@@ -12,6 +12,7 @@ class TimerPropertiesBuilder(private val durationInMillis: Long) {
 
     private val tasks: MutableList<Task> = ArrayList()
 
+    // todo validate not less than default 1ms
     fun tickInterval(timeInMillis: Long) = apply { this.tickIntervalInMillis = timeInMillis }
 
     fun finalAlarm(sound: Sound?) = apply { finalAlarmSound = sound }
@@ -26,16 +27,30 @@ class TimerPropertiesBuilder(private val durationInMillis: Long) {
         tasks.add(beforeTimeLeftTask)
     }
 
-    fun repeatEvery(timeInMillis: Long, alert: Alert, delayInMillis: Long = timeInMillis) = apply {
-        //todo validate delay is less then duration
+    fun repeatEvery(
+        timeInMillis: Long,
+        alert: Alert,
+        delayInMillis: Long = timeInMillis,
+        finishTimeInMillis: Long = durationInMillis
+    ) = apply {
+        if (timeInMillis > durationInMillis) {
+
+        }
+
+        if (delayInMillis > durationInMillis) {
+
+        }
+
+        if (finishTimeInMillis > durationInMillis) {
+
+        }
+
         val afterElapsedTimeTask = AfterElapsedTimeTask(timeInMillis, alert)
-        val repeatableTask = RepeatableTask(afterElapsedTimeTask, delayInMillis)
+        val repeatableTask = RepeatableTask(afterElapsedTimeTask, delayInMillis, finishTimeInMillis)
         tasks.add(repeatableTask)
     }
 
-    // todo fun repeatEvery from .. to
-
-    fun remindAfterFinish(timeInMillis: Long, alert: Alert) = apply {
+    fun remindAfterFinishEvery(timeInMillis: Long, alert: Alert) = apply {
         val afterElapsedTimeTask = AfterElapsedTimeTask(timeInMillis, alert)
         val repeatableTask = RepeatableTask(afterElapsedTimeTask, durationInMillis + timeInMillis)
         tasks.add(repeatableTask)

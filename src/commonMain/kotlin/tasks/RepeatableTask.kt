@@ -2,7 +2,8 @@ package tasks
 
 class RepeatableTask(
     private val task: Task,
-    val delayInMillis: Long
+    val repeatFromTimeInMillis: Long,
+    val repeatTillTimeInMillis: Long? = null
 ) : Task by task {
 
     var executionCounter = 0

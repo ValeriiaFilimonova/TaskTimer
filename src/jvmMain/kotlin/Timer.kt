@@ -12,7 +12,7 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
     private val onTickTask: RepeatableTask by lazy {
         RepeatableTask(object : Task {
-            override var executionTimeInMillis: Long = properties.tickIntervalInMillis
+            override var executionTimeInMillis: Long = 1.MILLISECONDS
 
             override fun execute() {
                 executeOnTick()
@@ -67,8 +67,8 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
         for (task in tasks) {
             if (task is RepeatableTask) {
-                val delay = task.executionCounter * task.executionTimeInMillis + task.delayInMillis - elapsedTime
-                taskExecutionService.scheduleAtFixedRate(task, delay)
+                val nextExecutionTime = task.executionCounter * task.executionTimeInMillis + task.repeatFromTimeInMillis
+                taskExecutionService.scheduleAtFixedRate(task, nextExecutionTime - elapsedTime)
             } else {
                 taskExecutionService.schedule(task, task.executionTimeInMillis - elapsedTime)
             }
@@ -88,21 +88,22 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
     actual var onTick: (() -> Unit)? = null
 
     private fun executeOnTick() {
-        onTick?.invoke()
+        elapsedTime += onTickTask.executionTimeInMillis
 
-        elapsedTime += properties.tickIntervalInMillis
-
-        if (elapsedTime >= duration) {
-            scheduledTaskToTimerTaskMap
-                .filterValues { task -> task is RepeatableTask && task.delayInMillis < duration}
-                .filterValues { task -> task != onTickTask }
-                .forEach { (future) -> future.cancel(true) }
+        if (elapsedTime % properties.tickIntervalInMillis == 0L) {
+            onTick?.invoke()
         }
+
+        scheduledTaskToTimerTaskMap
+            .filterValues { task -> task != onTickTask } // todo check why it's needed
+            .filterValues { task -> task is RepeatableTask && task.repeatFromTimeInMillis < duration }
+            .filterValues { task -> task is RepeatableTask && task.repeatTillTimeInMillis != null && task.repeatTillTimeInMillis < elapsedTime }
+            .forEach { (future) -> future.cancel(true) }
     }
 
     private fun ScheduledExecutorService.scheduleAtFixedRate(
         task: RepeatableTask,
-        delayInMillis: Long = task.delayInMillis
+        delayInMillis: Long = task.repeatFromTimeInMillis
     ): ScheduledFuture<*> {
 
         return scheduleAtFixedRate({ task.execute() }, delayInMillis, task.executionTimeInMillis, MILLISECONDS)
