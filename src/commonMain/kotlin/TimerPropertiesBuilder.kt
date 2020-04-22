@@ -58,8 +58,7 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
             throw TimerPropertiesInitError("Task finish time can't exceed timer duration")
         }
 
-        val afterElapsedTimeTask = AfterElapsedTimeTask(timeInMillis, alert)
-        val repeatableTask = RepeatableTask(afterElapsedTimeTask, delayInMillis, finishTimeInMillis)
+        val repeatableTask = RepeatableTask(timeInMillis, delayInMillis, finishTimeInMillis, alert)
         tasks.add(repeatableTask)
     }
 
@@ -68,8 +67,7 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
             throw TimerPropertiesInitError("Task execution time can't be zero or exceed timer duration")
         }
 
-        val afterElapsedTimeTask = AfterElapsedTimeTask(timeInMillis, alert)
-        val repeatableTask = RepeatableTask(afterElapsedTimeTask, durationInMillis + timeInMillis)
+        val repeatableTask = RepeatableTask(timeInMillis, durationInMillis + timeInMillis, alert = alert)
         tasks.add(repeatableTask)
     }
 

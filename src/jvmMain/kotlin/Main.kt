@@ -5,7 +5,7 @@ fun main() {
     val properties = TimerPropertiesBuilder(10.SECONDS)
         .tickInterval(500.MILLISECONDS)
         .repeatEvery(2.SECONDS, AlertFactory.getSoundAlert(), 1.SECONDS, finishTimeInMillis = 8.SECONDS)
-        .remindAfterFinishEvery(5.SECONDS, AlertFactory.getSoundAlert(FAIRY_DISAPPEARANCE))
+        .remindAfterFinishEvery(5.SECONDS, AlertFactory.getVoiceAlert("stop the timer"))
         .build()
 
     val timer = Timer(properties)

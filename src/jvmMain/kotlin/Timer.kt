@@ -1,3 +1,4 @@
+import alerts.Alert
 import tasks.RepeatableTask
 import tasks.Task
 import java.util.concurrent.Executors
@@ -10,15 +11,11 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
     private var scheduledTaskToTimerTaskMap: MutableMap<ScheduledFuture<*>, Task> = HashMap()
 
-    private val onTickTask: RepeatableTask by lazy {
-        RepeatableTask(object : Task {
-            override var executionTimeInMillis: MillisecondsTimeUnit = 1.MILLISECONDS
-
-            override fun execute() {
-                executeOnTick()
-            }
-        }, 0.MILLISECONDS)
-    }
+    private val onTickTask = RepeatableTask(1.MILLISECONDS, 0.MILLISECONDS, alert = object : Alert {
+        override fun alert() {
+            executeOnTick()
+        }
+    })
 
     val duration: MillisecondsTimeUnit
         get() = properties.durationInMillis
@@ -67,8 +64,8 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
         for (task in tasks) {
             if (task is RepeatableTask) {
-                val nextExecutionTime = task.executionTimeInMillis * task.executionCounter + task.repeatFromTimeInMillis
-                taskExecutionService.scheduleAtFixedRate(task, nextExecutionTime - elapsedTime)
+                val newDelay = task.executionTimeInMillis + task.repeatFrom - elapsedTime
+                taskExecutionService.scheduleAtFixedRate(task, newDelay)
             } else {
                 taskExecutionService.schedule(task, task.executionTimeInMillis - elapsedTime)
             }
@@ -88,7 +85,7 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
     actual var onTick: (() -> Unit)? = null
 
     private fun executeOnTick() {
-        elapsedTime += onTickTask.executionTimeInMillis
+        elapsedTime += onTickTask.repeatEvery
 
         if (elapsedTime % properties.tickIntervalInMillis == 0L) {
             onTick?.invoke()
@@ -96,20 +93,20 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
         scheduledTaskToTimerTaskMap
             .filterValues { task -> task != onTickTask } // todo check why it's needed
-            .filterValues { task -> task is RepeatableTask && task.repeatFromTimeInMillis < duration }
-            .filterValues { task -> task is RepeatableTask && task.repeatTillTimeInMillis != null && task.repeatTillTimeInMillis < elapsedTime }
+            .filterValues { task -> task is RepeatableTask && task.repeatFrom < duration }
+            .filterValues { task -> task is RepeatableTask && task.repeatTill != null && task.repeatTill < elapsedTime }
             .forEach { (future) -> future.cancel(true) }
     }
 
     private fun ScheduledExecutorService.scheduleAtFixedRate(
         task: RepeatableTask,
-        delayInMillis: MillisecondsTimeUnit = task.repeatFromTimeInMillis
+        delayInMillis: MillisecondsTimeUnit = task.repeatFrom
     ): ScheduledFuture<*> {
 
         return scheduleAtFixedRate(
             { task.execute() },
-            delayInMillis.value,
-            task.executionTimeInMillis.value,
+            delayInMillis.toLong(),
+            task.repeatEvery.toLong(),
             MILLISECONDS
         )
             .also { scheduledTaskToTimerTaskMap[it] = task }
@@ -120,7 +117,7 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
         executionTimeInMillis: MillisecondsTimeUnit = task.executionTimeInMillis
     ): ScheduledFuture<*> {
 
-        return schedule({ task.execute() }, executionTimeInMillis.value, MILLISECONDS)
+        return schedule({ task.execute() }, executionTimeInMillis.toLong(), MILLISECONDS)
             .also { scheduledTaskToTimerTaskMap[it] = task }
     }
 }

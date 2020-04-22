@@ -1,19 +1,24 @@
 package tasks
 
 import MillisecondsTimeUnit
+import alerts.Alert
+import times
 
 class RepeatableTask(
-    private val task: Task,
-    val repeatFromTimeInMillis: MillisecondsTimeUnit,
-    val repeatTillTimeInMillis: MillisecondsTimeUnit? = null
-) : Task by task {
+    val repeatEvery: MillisecondsTimeUnit,
+    val repeatFrom: MillisecondsTimeUnit,
+    val repeatTill: MillisecondsTimeUnit? = null,
+    override val alert: Alert
+) : TaskWithAlert {
 
-    var executionCounter: Int = 0
-        private set
+    private var executionCounter: Int = 0
+
+    override val executionTimeInMillis: MillisecondsTimeUnit
+        get() = repeatEvery * executionCounter
 
     override fun execute() {
         executionCounter += 1
 
-        task.execute()
+        alert.alert()
     }
 }
