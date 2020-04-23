@@ -5,9 +5,9 @@ import alerts.sound.Sound.TING_A_LING
 fun main() {
     val properties = TimerPropertiesBuilder(15.SECONDS)
         .tickInterval(500.MILLISECONDS)
-//        .afterPassed(0.SECONDS, AlertGenerators.getVoiceAlertGenerator("timer started"))
-        .beforeLeft(2.SECONDS, AlertGenerators.getVoiceAlertGenerator("two seconds left"))
-        .repeatEvery(2.SECONDS, 2.SECONDS, 10.SECONDS, AlertGenerators.getSoundAlertGenerator(TING_A_LING))
+        .afterPassed(0.SECONDS, AlertGenerators.getVoiceAlertGenerator("timer started"))
+        .beforeLeft(2.SECONDS, AlertGenerators.getSoundAlertGenerator(TING_A_LING))
+        .repeatEvery(2.SECONDS, 2.SECONDS, 10.SECONDS, AlertGenerators.getSayTimeAlertGenerator())
         .remindAfterFinishEvery(5.SECONDS, AlertGenerators.getVoiceAlertGenerator("stop the timer"))
         .finalAlarm(MORNING_DEW_LONG)
         .build()
