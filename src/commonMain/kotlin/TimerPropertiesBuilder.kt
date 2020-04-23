@@ -1,7 +1,8 @@
-import alerts.Alert
-import alerts.AlertFactory
+import alerts.AlertGenerator
+import alerts.AlertGenerators
 import alerts.sound.Sound
 import tasks.AfterElapsedTimeTask
+import tasks.BeforeTimeLeftTask
 import tasks.RepeatableTask
 import tasks.Task
 
@@ -22,29 +23,31 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
 
     fun finalAlarm(sound: Sound?) = apply { finalAlarmSound = sound }
 
-    fun afterPassed(timeInMillis: MillisecondsTimeUnit, alert: Alert) = apply {
+    fun task(task: Task) = apply { tasks.add(task) }
+
+    fun afterPassed(timeInMillis: MillisecondsTimeUnit, generator: AlertGenerator) = apply {
         if (timeInMillis > durationInMillis) {
             throw TimerPropertiesInitError("Task execution time can't exceed timer duration")
         }
 
-        val afterElapsedTimeTask = AfterElapsedTimeTask(timeInMillis, alert)
+        val afterElapsedTimeTask = AfterElapsedTimeTask(timeInMillis, generator)
         tasks.add(afterElapsedTimeTask)
     }
 
-    fun beforeLeft(timeInMillis: MillisecondsTimeUnit, alert: Alert) = apply {
+    fun beforeLeft(timeInMillis: MillisecondsTimeUnit, generator: AlertGenerator) = apply {
         if (timeInMillis > durationInMillis) {
             throw TimerPropertiesInitError("Task execution time can't exceed timer duration")
         }
 
-        val beforeTimeLeftTask = AfterElapsedTimeTask(durationInMillis - timeInMillis, alert)
+        val beforeTimeLeftTask = BeforeTimeLeftTask(timeInMillis, durationInMillis, generator)
         tasks.add(beforeTimeLeftTask)
     }
 
     fun repeatEvery(
         timeInMillis: MillisecondsTimeUnit,
-        alert: Alert,
         delayInMillis: MillisecondsTimeUnit = timeInMillis,
-        finishTimeInMillis: MillisecondsTimeUnit = durationInMillis
+        finishTimeInMillis: MillisecondsTimeUnit = durationInMillis,
+        generator: AlertGenerator
     ) = apply {
         if (timeInMillis > durationInMillis) {
             throw TimerPropertiesInitError("Task execution time can't exceed timer duration")
@@ -58,16 +61,16 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
             throw TimerPropertiesInitError("Task finish time can't exceed timer duration")
         }
 
-        val repeatableTask = RepeatableTask(timeInMillis, delayInMillis, finishTimeInMillis, alert)
+        val repeatableTask = RepeatableTask(timeInMillis, delayInMillis, finishTimeInMillis, generator)
         tasks.add(repeatableTask)
     }
 
-    fun remindAfterFinishEvery(timeInMillis: MillisecondsTimeUnit, alert: Alert) = apply {
+    fun remindAfterFinishEvery(timeInMillis: MillisecondsTimeUnit, generator: AlertGenerator) = apply {
         if (timeInMillis > durationInMillis || timeInMillis.equals(0)) {
             throw TimerPropertiesInitError("Task execution time can't be zero or exceed timer duration")
         }
 
-        val repeatableTask = RepeatableTask(timeInMillis, durationInMillis + timeInMillis, alert = alert)
+        val repeatableTask = RepeatableTask(timeInMillis, durationInMillis + timeInMillis, generator = generator)
         tasks.add(repeatableTask)
     }
 
@@ -81,7 +84,9 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
         }
 
         if (finalAlarmSound != null) {
-            val timerExpiredTask = AfterElapsedTimeTask(durationInMillis, AlertFactory.getSoundAlert(finalAlarmSound!!))
+            val timerExpiredTask = AfterElapsedTimeTask(
+                durationInMillis, AlertGenerators.getSoundAlertGenerator(finalAlarmSound!!)
+            )
             tasks.add(timerExpiredTask)
         }
 

@@ -1,11 +1,15 @@
-import alerts.AlertFactory
-import alerts.sound.Sound.*
+import alerts.AlertGenerators
+import alerts.sound.Sound.MORNING_DEW_LONG
+import alerts.sound.Sound.TING_A_LING
 
 fun main() {
-    val properties = TimerPropertiesBuilder(10.SECONDS)
+    val properties = TimerPropertiesBuilder(15.SECONDS)
         .tickInterval(500.MILLISECONDS)
-        .repeatEvery(2.SECONDS, AlertFactory.getSoundAlert(), 1.SECONDS, finishTimeInMillis = 8.SECONDS)
-        .remindAfterFinishEvery(5.SECONDS, AlertFactory.getVoiceAlert("stop the timer"))
+//        .afterPassed(0.SECONDS, AlertGenerators.getVoiceAlertGenerator("timer started"))
+        .beforeLeft(2.SECONDS, AlertGenerators.getVoiceAlertGenerator("two seconds left"))
+        .repeatEvery(2.SECONDS, 2.SECONDS, 10.SECONDS, AlertGenerators.getSoundAlertGenerator(TING_A_LING))
+        .remindAfterFinishEvery(5.SECONDS, AlertGenerators.getVoiceAlertGenerator("stop the timer"))
+        .finalAlarm(MORNING_DEW_LONG)
         .build()
 
     val timer = Timer(properties)
