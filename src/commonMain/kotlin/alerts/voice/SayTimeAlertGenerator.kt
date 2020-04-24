@@ -13,9 +13,9 @@ import kotlin.time.*
 class SayTimeAlertGenerator : AlertGenerator {
     override fun generate(task: AlertTask, vararg params: Any): VoiceAlert {
         val text = when (task) {
-            is AfterElapsedTimeTask -> "${getStringRepresentation(task.executionTimeInMillis)} elapsed"
-            is BeforeTimeLeftTask -> "${getStringRepresentation(task.beforeTime)} left"
-            is RepeatableTask -> "${getStringRepresentation(task.executionTimeInMillis)} passed"
+            is AfterElapsedTimeTask -> "${getStringRepresentation(task.executionTimeInMillis)}elapsed"
+            is BeforeTimeLeftTask -> "${getStringRepresentation(task.beforeTime)}left"
+            is RepeatableTask -> "${getStringRepresentation(task.executionTimeInMillis)}passed"
             else -> throw AlertGenerationError("Unsupported task type ${task::class.simpleName}")
         }
 

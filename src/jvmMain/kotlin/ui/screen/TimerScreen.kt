@@ -11,8 +11,8 @@ import kotlin.time.milliseconds
 
 object TimerScreen {
     private val terminalFactory: DefaultTerminalFactory
-    private lateinit var terminal: Terminal
-    private lateinit var screen: Screen
+    private var terminal: Terminal? = null
+    private var screen: Screen? = null
 
     init {
         val fontConfiguration = TimerTerminalFontConfiguration(30)
@@ -29,17 +29,21 @@ object TimerScreen {
     fun show() {
         terminal = terminalFactory.createTerminal()
         screen = TerminalScreen(terminal).apply { cursorPosition = null }
-        screen.startScreen()
+        screen?.startScreen()
     }
 
     fun hide() {
-        screen.stopScreen()
-        screen.close()
-        terminal.close()
+        screen?.stopScreen()
+        screen?.close()
+        terminal?.close()
     }
 
     @ExperimentalTime
     fun display(timeLeft: Long) {
+        if (screen == null) {
+            return
+        }
+
         abs(timeLeft).milliseconds.toComponents { days, hours, minutes, seconds, _ ->
             var text = "${days.pad()}:${hours.pad()}:${minutes.pad()}:${seconds.pad()}"
 
@@ -47,12 +51,12 @@ object TimerScreen {
                 text = "-$text"
             }
 
-            val size = screen.terminalSize
+            val size = screen!!.terminalSize
             val column = (size.columns - text.length) / 2
             val row = size.rows / 2
 
-            screen.newTextGraphics().putString(column, row, text)
-            screen.refresh()
+            screen!!.newTextGraphics().putString(column, row, text)
+            screen!!.refresh()
         }
     }
 

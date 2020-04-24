@@ -5,12 +5,11 @@ import SECONDS
 import Timer
 import TimerPropertiesBuilder
 import alerts.AlertGenerators
-import picocli.CommandLine
-import picocli.CommandLine.Option
-import picocli.CommandLine.ParentCommand
+import picocli.CommandLine.*
+import ui.ApplicationUsageError
 import kotlin.time.ExperimentalTime
 
-@CommandLine.Command(
+@Command(
     name = "default",
     description = [
         "Create and start a timer with default configuration.",

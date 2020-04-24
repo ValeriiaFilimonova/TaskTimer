@@ -7,7 +7,7 @@ import MINUTES
 import MillisecondsTimeUnit
 import SECONDS
 import picocli.CommandLine
-import ui.commands.ApplicationUsageError
+import ui.ApplicationUsageError
 
 class TimeDurationConverter : CommandLine.ITypeConverter<MillisecondsTimeUnit> {
     override fun convert(duration: String?): MillisecondsTimeUnit {

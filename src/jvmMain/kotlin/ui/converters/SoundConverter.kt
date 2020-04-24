@@ -2,7 +2,7 @@ package ui.converters
 
 import alerts.sound.Sound
 import picocli.CommandLine
-import ui.commands.ApplicationUsageError
+import ui.ApplicationUsageError
 
 class SoundConverter : CommandLine.ITypeConverter<Sound?> {
     override fun convert(soundString: String?): Sound? {

@@ -2,8 +2,11 @@ package ui.commands
 
 import MillisecondsTimeUnit
 import alerts.AlertGenerators
+import alerts.print.PrintAlertGenerator
+import alerts.print.PrintTimeAlertGenerator
 import alerts.sound.Sound
 import picocli.CommandLine.*
+import ui.ApplicationUsageError
 import kotlin.time.ExperimentalTime
 
 @Command(
@@ -66,7 +69,7 @@ class AddTaskTimerCommand : TimerSubCommand() {
 
     @Option(
         names = ["-m", "--message"],
-        description = ["Text to say on SAY_TEXT action"]
+        description = ["Text to say on SAY_TEXT or to print on PRINT_TEXT action"]
     )
     var text: String? = null
 
@@ -103,6 +106,15 @@ class AddTaskTimerCommand : TimerSubCommand() {
             Action.SAY_TIME -> {
                 AlertGenerators.getSayTimeAlertGenerator()
             }
+            Action.PRINT_TEXT -> {
+                if (text == null) {
+                    throw ApplicationUsageError("Message is needed for PRINT_TEXT action")
+                }
+                PrintAlertGenerator(text!!.trim('"'))
+            }
+            Action.PRINT_TIME -> {
+                PrintTimeAlertGenerator()
+            }
         }
 
         when (type) {
@@ -132,5 +144,7 @@ enum class TaskClass {
 enum class Action {
     PLAY_SOUND,
     SAY_TEXT,
-    SAY_TIME
+    SAY_TIME,
+    PRINT_TEXT,
+    PRINT_TIME
 }

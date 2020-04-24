@@ -4,6 +4,8 @@ import picocli.CommandLine.ExitCode
 import ui.commands.*
 import ui.converters.SoundConverter
 import ui.converters.TimeDurationConverter
+import ui.handlers.ExecutionExceptionHandler
+import ui.handlers.ParameterExceptionHandler
 import java.util.*
 import kotlin.time.ExperimentalTime
 

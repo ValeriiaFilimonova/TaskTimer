@@ -1,4 +1,4 @@
-package ui.commands
+package ui.handlers
 
 import picocli.CommandLine
 import picocli.CommandLine.*
