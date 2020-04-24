@@ -1,6 +1,5 @@
 package ui.commands
 
-import MILLISECONDS
 import MillisecondsTimeUnit
 import TimerPropertiesBuilder
 import alerts.sound.Sound
@@ -33,7 +32,7 @@ class CreateTimerCommand : TimerSubCommand() {
             "Supported units: ms, s, m, h, d."
         ]
     )
-    private var duration: MillisecondsTimeUnit = 0.MILLISECONDS
+    private lateinit var duration: MillisecondsTimeUnit
 
     @Option(
         names = ["-a", "--alarm"],
@@ -41,8 +40,8 @@ class CreateTimerCommand : TimerSubCommand() {
         description = [
             "Set final alarm sound.",
             "If set to NONE final alarm is skipped.",
-            "Supported values: \${COMPLETION-CANDIDATES}.",
-            "Defaults to \${DEFAULT - VALUE}."
+            "Supported values: \${COMPLETION-CANDIDATES}, NONE.",
+            "Defaults to \${DEFAULT-VALUE}."
         ]
     )
     private var alarm: Sound? = null

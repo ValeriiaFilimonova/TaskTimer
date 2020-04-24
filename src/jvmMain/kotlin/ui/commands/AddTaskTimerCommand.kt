@@ -43,11 +43,14 @@ class AddTaskTimerCommand : TimerSubCommand() {
 
     @Option(
         names = ["-c", "--class"],
-        defaultValue = "AFTER",
+        defaultValue = "AT",
         description = [
-            "Set task class.",
-            "Supported values: \${COMPLETION-CANDIDATES}.",
-            "Defaults to \${DEFAULT - VALUE}."
+            "Set task class. Supported values:",
+            "AT - execute task at the given time from the timer start",
+            "BEFORE_LEFT - execute the task before given time left till the timer end",
+            "EVERY - execute the task with the given period",
+            "AFTER_FINISH_EVERY - execute that with the given period after timer is finished but not stopped",
+            "Defaults to \${DEFAULT-VALUE}."
         ]
     )
     lateinit var type: TaskClass
@@ -103,23 +106,27 @@ class AddTaskTimerCommand : TimerSubCommand() {
         }
 
         when (type) {
-            TaskClass.AFTER -> {
+            TaskClass.AT -> {
                 properties?.afterPassed(time, alertGenerator)
             }
-            TaskClass.BEFORE -> {
+            TaskClass.BEFORE_LEFT -> {
                 properties?.beforeLeft(time, alertGenerator)
             }
             TaskClass.EVERY -> {
                 properties?.repeatEvery(time, alertGenerator, delay, finish)
+            }
+            TaskClass.AFTER_FINISH_EVERY -> {
+                properties?.remindAfterFinishEvery(time, alertGenerator)
             }
         }
     }
 }
 
 enum class TaskClass {
-    AFTER,
-    BEFORE,
-    EVERY
+    AT,
+    BEFORE_LEFT,
+    EVERY,
+    AFTER_FINISH_EVERY
 }
 
 enum class Action {

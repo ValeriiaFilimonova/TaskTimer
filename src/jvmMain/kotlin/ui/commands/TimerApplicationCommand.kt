@@ -14,13 +14,13 @@ import kotlin.time.ExperimentalTime
         "%nExamples:",
         "timer create --duration=5.m",
         "timer task --time=1.m --class=EVERY --action=SAY_TIME",
-        "timer task --timer=10.s --class=BEFORE --action=SAY_TEXT -m=\"10 seconds left\"",
+        "timer task --timer=10.s --class=BEFORE_LEFT --action=SAY_TEXT -m=\"10 seconds left\"",
         "timer start"
     ],
     subcommands = [
         CreateTimerCommand::class, AddTaskTimerCommand::class,
         StartTimerCommand::class, StopTimerCommand::class, ResumeTimerCommand::class, PauseTimerCommand::class,
-        PrintHelpCommand::class
+        DefaultTimerCommand::class, PrintHelpCommand::class
     ],
     descriptionHeading = "%nDescription:%n",
     commandListHeading = "%nCommands:%n"
