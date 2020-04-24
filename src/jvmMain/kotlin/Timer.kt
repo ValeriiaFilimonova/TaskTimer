@@ -5,13 +5,14 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 
 actual class Timer actual constructor(actual val properties: TimerProperties) {
     private var taskExecutionService = Executors.newScheduledThreadPool(3)
 
     private var scheduledTaskToTimerTaskMap: MutableMap<ScheduledFuture<*>, Task> = HashMap()
 
-    private val onTickTask = RepeatableTask(1.MILLISECONDS, 0.MILLISECONDS, alert = object : Alert {
+    private val onTickTask = RepeatableTask(100.MILLISECONDS, 0.MILLISECONDS, alert = object : Alert {
         override fun alert() {
             executeOnTick()
         }
@@ -41,13 +42,19 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
     actual fun stop() {
         taskExecutionService.shutdown()
 
+        if (!taskExecutionService.awaitTermination(1, SECONDS)) {
+            taskExecutionService.shutdownNow()
+        }
+
         onStop?.invoke()
     }
 
     actual fun pause() {
-        // todo make it more safe
-        scheduledTaskToTimerTaskMap = taskExecutionService
-            .shutdownNow()
+        val shutDownTasks = taskExecutionService.shutdownNow()
+
+        taskExecutionService.awaitTermination(1, SECONDS)
+
+        scheduledTaskToTimerTaskMap = shutDownTasks
             .map { future -> future as ScheduledFuture<*> }
             .map { future -> Pair(future, scheduledTaskToTimerTaskMap[future]!!) }
             .toMap()
@@ -64,8 +71,12 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
         for (task in tasks) {
             if (task is RepeatableTask) {
-                val newDelay = task.executionTimeInMillis + task.repeatFrom - elapsedTime
-                taskExecutionService.scheduleAtFixedRate(task, newDelay)
+                if (task == onTickTask) {
+                    taskExecutionService.scheduleAtFixedRate(onTickTask, 0.MILLISECONDS)
+                } else {
+                    val newDelay = task.executionTimeInMillis + task.repeatFrom - elapsedTime
+                    taskExecutionService.scheduleAtFixedRate(task, newDelay)
+                }
             } else {
                 taskExecutionService.schedule(task, task.executionTimeInMillis - elapsedTime)
             }
@@ -85,6 +96,10 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
     actual var onTick: (() -> Unit)? = null
 
     private fun executeOnTick() {
+        if (taskExecutionService.isShutdown) {
+            return
+        }
+
         elapsedTime += onTickTask.repeatEvery
 
         if (elapsedTime % properties.tickIntervalInMillis == 0L) {

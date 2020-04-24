@@ -14,8 +14,8 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
     private val tasks: MutableList<Task> = ArrayList()
 
     fun tickInterval(timeInMillis: MillisecondsTimeUnit) = apply {
-        if (timeInMillis > durationInMillis || timeInMillis.equals(0)) {
-            throw TimerPropertiesInitError("Tick interval can't be zero or exceed timer duration")
+        if (timeInMillis > durationInMillis || timeInMillis < 200.MILLISECONDS) {
+            throw TimerPropertiesInitError("Tick interval can't be less than 200ms or exceed timer duration")
         }
 
         this.tickIntervalInMillis = timeInMillis
@@ -41,6 +41,15 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
 
         val beforeTimeLeftTask = BeforeTimeLeftTask(timeInMillis, durationInMillis, generator)
         tasks.add(beforeTimeLeftTask)
+    }
+
+    fun repeatEvery(
+        timeInMillis: MillisecondsTimeUnit,
+        generator: AlertGenerator,
+        delayInMillis: MillisecondsTimeUnit?,
+        finishTimeInMillis: MillisecondsTimeUnit?
+    ) = apply {
+        repeatEvery(timeInMillis, delayInMillis ?: timeInMillis, finishTimeInMillis ?: durationInMillis, generator)
     }
 
     fun repeatEvery(
