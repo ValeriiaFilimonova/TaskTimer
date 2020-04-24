@@ -1,4 +1,4 @@
-package ui.lantera
+package ui.screen
 
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFontConfiguration
 import java.awt.Font
