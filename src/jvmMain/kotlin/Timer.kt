@@ -8,6 +8,8 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
 
 actual class Timer actual constructor(actual val properties: TimerProperties) {
+    private var state = TimerState.STOPPED
+
     private var taskExecutionService = Executors.newScheduledThreadPool(3)
 
     private var scheduledTaskToTimerTaskMap: MutableMap<ScheduledFuture<*>, Task> = HashMap()
@@ -24,6 +26,8 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
     actual var elapsedTime = 0.MILLISECONDS
 
     actual fun start() {
+        updateState(TimerState.STARTED)
+
         properties.tasks
             .plus(onTickTask)
             .sortedBy { it.executionTimeInMillis }
@@ -40,6 +44,8 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
     }
 
     actual fun stop() {
+        updateState(TimerState.STOPPED)
+
         taskExecutionService.shutdown()
 
         if (!taskExecutionService.awaitTermination(1, SECONDS)) {
@@ -50,6 +56,8 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
     }
 
     actual fun pause() {
+        updateState(TimerState.PAUSED)
+
         val shutDownTasks = taskExecutionService.shutdownNow()
 
         taskExecutionService.awaitTermination(1, SECONDS)
@@ -64,6 +72,8 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
     }
 
     actual fun resume() {
+        updateState(TimerState.RESUMED)
+
         val tasks = ArrayList(scheduledTaskToTimerTaskMap.values)
 
         taskExecutionService = Executors.newScheduledThreadPool(3)
@@ -113,6 +123,14 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
             .forEach { (future) -> future.cancel(true) }
     }
 
+    private fun updateState(newState: TimerState) {
+        if (!state.allowedStates.contains(newState.name)) {
+            throw RuntimeException("Can't move from $state to $newState timer state")
+        }
+
+        state = newState
+    }
+
     private fun ScheduledExecutorService.scheduleAtFixedRate(
         task: RepeatableTask,
         delayInMillis: MillisecondsTimeUnit = task.repeatFrom
@@ -135,4 +153,11 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
         return schedule({ task.execute() }, executionTimeInMillis.toLong(), MILLISECONDS)
             .also { scheduledTaskToTimerTaskMap[it] = task }
     }
+}
+
+enum class TimerState(vararg val allowedStates: String) {
+    STARTED("PAUSED", "STOPPED"),
+    STOPPED("STARTED"),
+    PAUSED("RESUMED", "STOPPED"),
+    RESUMED("PAUSED", "STOPPED")
 }
