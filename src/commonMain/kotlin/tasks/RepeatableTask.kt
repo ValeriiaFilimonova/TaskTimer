@@ -33,7 +33,7 @@ class RepeatableTask(
 
     override fun execute() {
         executionTimeInMillis = repeatEvery * executionCounter + repeatFrom
-        executionCounter += 1
+        executionCounter++
 
         super.execute()
     }

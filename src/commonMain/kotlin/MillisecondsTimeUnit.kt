@@ -24,11 +24,18 @@ class MillisecondsTimeUnit(value: Long) : Comparable<MillisecondsTimeUnit> {
         this.value = value
     }
 
+    override fun toString(): String {
+        return "$value milliseconds"
+    }
+
     override fun equals(other: Any?): Boolean {
         if (other is MillisecondsTimeUnit) {
             return other.value == value
         }
-        if (other is Long || other is Int) {
+        if (other is Int) {
+            return other.toLong() == value
+        }
+        if (other is Long) {
             return other == value
         }
         return false

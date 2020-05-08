@@ -13,9 +13,9 @@ import kotlin.time.*
 class SayTimeAlertGenerator : AlertGenerator {
     override fun generate(task: AlertTask, vararg params: Any): VoiceAlert {
         val text = when (task) {
-            is AfterElapsedTimeTask -> "${getStringRepresentation(task.executionTimeInMillis)}elapsed"
-            is BeforeTimeLeftTask -> "${getStringRepresentation(task.beforeTime)}left"
-            is RepeatableTask -> "${getStringRepresentation(task.executionTimeInMillis)}passed"
+            is AfterElapsedTimeTask -> "${getStringRepresentation(task.executionTimeInMillis)} elapsed"
+            is BeforeTimeLeftTask -> "${getStringRepresentation(task.beforeTime)} left"
+            is RepeatableTask -> "${getStringRepresentation(task.executionTimeInMillis)} passed"
             else -> throw AlertGenerationError("Unsupported task type ${task::class.simpleName}")
         }
 
@@ -23,6 +23,7 @@ class SayTimeAlertGenerator : AlertGenerator {
     }
 
     // TODO migrate everything to Duration.class when not experimental
+    // TODO migrate all to low case for further easier migration
     companion object {
         fun getStringRepresentation(time: MillisecondsTimeUnit): String = buildString {
             var leftDuration = time.toLong().milliseconds
@@ -50,7 +51,7 @@ class SayTimeAlertGenerator : AlertGenerator {
                 append(secsText).append(" ")
                 leftDuration -= durationInSecs
             }
-        }
+        }.trim()
 
         private fun getStringFor(unitsNumber: Double, unit: DurationUnit): Pair<Duration, String> {
             if (unitsNumber < 1) {
@@ -70,7 +71,7 @@ class SayTimeAlertGenerator : AlertGenerator {
         private fun getUnitNameInProperForm(numberOfUnits: Int, unitNameSingular: String) =
             if (numberOfUnits > 1) "${unitNameSingular}s" else unitNameSingular
 
-        fun DurationUnit.fullName(): String = when (this) {
+        private fun DurationUnit.fullName(): String = when (this) {
             DurationUnit.NANOSECONDS -> "nanosecond"
             DurationUnit.MICROSECONDS -> "microsecond"
             DurationUnit.MILLISECONDS -> "millisecond"

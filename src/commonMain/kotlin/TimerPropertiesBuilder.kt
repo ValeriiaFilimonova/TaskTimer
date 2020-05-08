@@ -14,8 +14,8 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
     private val tasks: MutableList<Task> = ArrayList()
 
     fun tickInterval(timeInMillis: MillisecondsTimeUnit) = apply {
-        if (timeInMillis > durationInMillis || timeInMillis < 200.MILLISECONDS) {
-            throw TimerPropertiesInitError("Tick interval can't be less than 200ms or exceed timer duration")
+        if (timeInMillis > durationInMillis) {
+            throw TimerPropertiesInitError("Tick interval can't exceed timer duration")
         }
 
         this.tickIntervalInMillis = timeInMillis
@@ -58,11 +58,11 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
         finishTimeInMillis: MillisecondsTimeUnit = durationInMillis,
         generator: AlertGenerator
     ) = apply {
-        if (timeInMillis > durationInMillis) {
-            throw TimerPropertiesInitError("Task execution time can't exceed timer duration")
+        if (timeInMillis >= durationInMillis || timeInMillis.equals(0)) {
+            throw TimerPropertiesInitError("Task execution time can't be zero or exceed timer duration")
         }
 
-        if (delayInMillis > durationInMillis) {
+        if (delayInMillis >= durationInMillis) {
             throw TimerPropertiesInitError("Task delay time can't exceed timer duration")
         }
 
@@ -75,8 +75,8 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
     }
 
     fun remindAfterFinishEvery(timeInMillis: MillisecondsTimeUnit, generator: AlertGenerator) = apply {
-        if (timeInMillis > durationInMillis || timeInMillis.equals(0)) {
-            throw TimerPropertiesInitError("Task execution time can't be zero or exceed timer duration")
+        if (timeInMillis.equals(0)) {
+            throw TimerPropertiesInitError("Task execution time can't be zero")
         }
 
         val repeatableTask = RepeatableTask(timeInMillis, durationInMillis + timeInMillis, generator = generator)
@@ -84,12 +84,8 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
     }
 
     fun build(): TimerProperties {
-        if (durationInMillis <= 0) {
-            throw TimerPropertiesInitError("Timer duration can't be zero or negative")
-        }
-
-        if (durationInMillis > 20.DAYS) {
-            throw TimerPropertiesInitError("Timer duration can't be exceed 20 days")
+        if (durationInMillis <= 0 || durationInMillis > 20.DAYS) {
+            throw TimerPropertiesInitError("Timer duration can't be zero or exceed 20 days")
         }
 
         if (finalAlarmSound != null) {

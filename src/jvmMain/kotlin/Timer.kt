@@ -20,6 +20,12 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
         }
     })
 
+    init {
+        if (properties.tickIntervalInMillis <  200.MILLISECONDS) {
+            throw JvmTimerError("Tick interval can't be less than 200ms")
+        }
+    }
+
     val duration: MillisecondsTimeUnit
         get() = properties.durationInMillis
 
@@ -117,7 +123,7 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
         }
 
         scheduledTaskToTimerTaskMap
-            .filterValues { task -> task != onTickTask } // todo check why it's needed
+            .filterValues { task -> task != onTickTask } // TODO check why it's needed
             .filterValues { task -> task is RepeatableTask && task.repeatFrom < duration }
             .filterValues { task -> task is RepeatableTask && task.repeatTill != null && task.repeatTill < elapsedTime }
             .forEach { (future) -> future.cancel(true) }
@@ -125,7 +131,7 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
     private fun updateState(newState: TimerState) {
         if (!state.allowedStates.contains(newState.name)) {
-            throw RuntimeException("Can't move from $state to $newState timer state")
+            throw JvmTimerError("Can't move from $state to $newState timer state")
         }
 
         state = newState
