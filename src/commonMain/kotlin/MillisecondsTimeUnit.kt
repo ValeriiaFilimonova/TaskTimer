@@ -1,17 +1,17 @@
-val Int.MILLISECONDS: MillisecondsTimeUnit
+val Int.milliseconds: MillisecondsTimeUnit
     get() = MillisecondsTimeUnit(this.toLong())
 
-val Int.SECONDS: MillisecondsTimeUnit
-    get() = this.MILLISECONDS * 1000
+val Int.seconds: MillisecondsTimeUnit
+    get() = this.milliseconds * 1000
 
-val Int.MINUTES: MillisecondsTimeUnit
-    get() = this.SECONDS * 60
+val Int.minutes: MillisecondsTimeUnit
+    get() = this.seconds * 60
 
-val Int.HOURS: MillisecondsTimeUnit
-    get() = this.MINUTES * 60
+val Int.hours: MillisecondsTimeUnit
+    get() = this.minutes * 60
 
-val Int.DAYS: MillisecondsTimeUnit
-    get() = this.HOURS * 24
+val Int.days: MillisecondsTimeUnit
+    get() = this.hours * 24
 
 class MillisecondsTimeUnit(value: Long) : Comparable<MillisecondsTimeUnit> {
     var value: Long

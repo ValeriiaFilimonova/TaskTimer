@@ -1,6 +1,6 @@
 package tasks
 
-import MILLISECONDS
+import milliseconds
 import MillisecondsTimeUnit
 import alerts.Alert
 import alerts.AlertGenerator
@@ -25,7 +25,7 @@ class RepeatableTask(
 
     private var executionCounter: Int = 0
 
-    override var executionTimeInMillis: MillisecondsTimeUnit = 0.MILLISECONDS
+    override var executionTimeInMillis: MillisecondsTimeUnit = 0.milliseconds
         private set
 
     override val getAlert: () -> Alert

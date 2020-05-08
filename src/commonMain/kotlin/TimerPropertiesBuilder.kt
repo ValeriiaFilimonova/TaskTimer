@@ -7,7 +7,7 @@ import tasks.RepeatableTask
 import tasks.Task
 
 class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit) {
-    private var tickIntervalInMillis: MillisecondsTimeUnit = 10.MILLISECONDS
+    private var tickIntervalInMillis: MillisecondsTimeUnit = 10.milliseconds
 
     private var finalAlarmSound: Sound? = Sound.WISE_MASTER
 
@@ -84,7 +84,7 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
     }
 
     fun build(): TimerProperties {
-        if (durationInMillis <= 0 || durationInMillis > 20.DAYS) {
+        if (durationInMillis <= 0 || durationInMillis > 20.days) {
             throw TimerPropertiesInitError("Timer duration can't be zero or exceed 20 days")
         }
 

@@ -1,7 +1,7 @@
 package ui.commands
 
 import MillisecondsTimeUnit
-import SECONDS
+import seconds
 import Timer
 import TimerPropertiesBuilder
 import alerts.AlertGenerators
@@ -39,13 +39,13 @@ class DefaultTimerCommand : TimerSubCommand() {
     private lateinit var duration: MillisecondsTimeUnit
 
     override fun run() {
-        if (duration < 30.SECONDS) {
+        if (duration < 30.seconds) {
             throw ApplicationUsageError("Default timer duration can't be less than 30 seconds")
         }
 
         properties = TimerPropertiesBuilder(duration)
-            .tickInterval(1.SECONDS)
-            .remindAfterFinishEvery(30.SECONDS, AlertGenerators.getSayTimeAlertGenerator())
+            .tickInterval(1.seconds)
+            .remindAfterFinishEvery(30.seconds, AlertGenerators.getSayTimeAlertGenerator())
 
         timer = Timer(properties!!.build())
         timer?.start()

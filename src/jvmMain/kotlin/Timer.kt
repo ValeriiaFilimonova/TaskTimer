@@ -14,14 +14,14 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
     private var scheduledTaskToTimerTaskMap: MutableMap<ScheduledFuture<*>, Task> = HashMap()
 
-    private val onTickTask = RepeatableTask(100.MILLISECONDS, 0.MILLISECONDS, alert = object : Alert {
+    private val onTickTask = RepeatableTask(100.milliseconds, 0.milliseconds, alert = object : Alert {
         override fun alert() {
             executeOnTick()
         }
     })
 
     init {
-        if (properties.tickIntervalInMillis <  200.MILLISECONDS) {
+        if (properties.tickIntervalInMillis <  200.milliseconds) {
             throw JvmTimerError("Tick interval can't be less than 200ms")
         }
     }
@@ -29,7 +29,7 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
     val duration: MillisecondsTimeUnit
         get() = properties.durationInMillis
 
-    actual var elapsedTime = 0.MILLISECONDS
+    actual var elapsedTime = 0.milliseconds
 
     actual fun start() {
         updateState(TimerState.STARTED)
@@ -88,7 +88,7 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
         for (task in tasks) {
             if (task is RepeatableTask) {
                 if (task == onTickTask) {
-                    taskExecutionService.scheduleAtFixedRate(onTickTask, 0.MILLISECONDS)
+                    taskExecutionService.scheduleAtFixedRate(onTickTask, 0.milliseconds)
                 } else {
                     val newDelay = task.executionTimeInMillis + task.repeatFrom - elapsedTime
                     taskExecutionService.scheduleAtFixedRate(task, newDelay)

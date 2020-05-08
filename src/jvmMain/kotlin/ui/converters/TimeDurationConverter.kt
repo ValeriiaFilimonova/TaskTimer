@@ -1,11 +1,11 @@
 package ui.converters
 
-import DAYS
-import HOURS
-import MILLISECONDS
-import MINUTES
+import days
+import hours
+import milliseconds
+import minutes
 import MillisecondsTimeUnit
-import SECONDS
+import seconds
 import picocli.CommandLine
 import ui.ApplicationUsageError
 
@@ -16,11 +16,11 @@ class TimeDurationConverter : CommandLine.ITypeConverter<MillisecondsTimeUnit> {
         if (split.size == 2) {
             val time = split[0].toIntOrNull()
             val timeInMillis = when (split[1]) {
-                "ms" -> time?.MILLISECONDS
-                "s" -> time?.SECONDS
-                "m" -> time?.MINUTES
-                "h" -> time?.HOURS
-                "d" -> time?.DAYS
+                "ms" -> time?.milliseconds
+                "s" -> time?.seconds
+                "m" -> time?.minutes
+                "h" -> time?.hours
+                "d" -> time?.days
                 else -> null
             }
 

@@ -1,6 +1,6 @@
 package tasks
 
-import SECONDS
+import seconds
 import alerts.Alert
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,30 +14,30 @@ open class RepeatableTaskTest {
 
     @Test
     fun execute_withZeroFromTime_executionTimeCalculatedProperly() {
-        val task = RepeatableTask(10.SECONDS, 0.SECONDS, alert = fakeAlert)
+        val task = RepeatableTask(10.seconds, 0.seconds, alert = fakeAlert)
 
-        assertEquals(0.SECONDS, task.executionTimeInMillis)
-
-        task.execute()
-        assertEquals(0.SECONDS, task.executionTimeInMillis)
+        assertEquals(0.seconds, task.executionTimeInMillis)
 
         task.execute()
-        assertEquals(10.SECONDS, task.executionTimeInMillis)
+        assertEquals(0.seconds, task.executionTimeInMillis)
 
         task.execute()
-        assertEquals(20.SECONDS, task.executionTimeInMillis)
+        assertEquals(10.seconds, task.executionTimeInMillis)
+
+        task.execute()
+        assertEquals(20.seconds, task.executionTimeInMillis)
     }
 
     @Test
     fun execute_withNonZeroFromTime_executionTimeCalculatedProperly() {
-        val task = RepeatableTask(10.SECONDS, 3.SECONDS, alert = fakeAlert)
+        val task = RepeatableTask(10.seconds, 3.seconds, alert = fakeAlert)
 
-        assertEquals(0.SECONDS, task.executionTimeInMillis)
-
-        task.execute()
-        assertEquals(3.SECONDS, task.executionTimeInMillis)
+        assertEquals(0.seconds, task.executionTimeInMillis)
 
         task.execute()
-        assertEquals(13.SECONDS, task.executionTimeInMillis)
+        assertEquals(3.seconds, task.executionTimeInMillis)
+
+        task.execute()
+        assertEquals(13.seconds, task.executionTimeInMillis)
     }
 }

@@ -23,7 +23,6 @@ class SayTimeAlertGenerator : AlertGenerator {
     }
 
     // TODO migrate everything to Duration.class when not experimental
-    // TODO migrate all to low case for further easier migration
     companion object {
         fun getStringRepresentation(time: MillisecondsTimeUnit): String = buildString {
             var leftDuration = time.toLong().milliseconds
