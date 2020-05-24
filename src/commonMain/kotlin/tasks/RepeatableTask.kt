@@ -6,6 +6,7 @@ import alerts.Alert
 import alerts.AlertGenerator
 import plus
 import times
+import kotlin.properties.Delegates
 
 class RepeatableTask(
     val repeatEvery: MillisecondsTimeUnit,
@@ -23,7 +24,9 @@ class RepeatableTask(
         override fun generate(task: AlertTask, vararg params: Any): Alert = alert
     })
 
-    private var executionCounter: Int = 0
+    private var executionCounter: Int by Delegates.observable(0) { _, _, count ->
+        executionTimeInMillis = repeatEvery * (count - 1) + repeatFrom
+    }
 
     override var executionTimeInMillis: MillisecondsTimeUnit = 0.milliseconds
         private set
@@ -32,7 +35,6 @@ class RepeatableTask(
         get() = { generator.generate(this) }
 
     override fun execute() {
-        executionTimeInMillis = repeatEvery * executionCounter + repeatFrom
         executionCounter++
 
         super.execute()

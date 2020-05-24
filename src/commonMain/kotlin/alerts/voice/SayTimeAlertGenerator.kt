@@ -50,6 +50,11 @@ class SayTimeAlertGenerator : AlertGenerator {
                 append(secsText).append(" ")
                 leftDuration -= durationInSecs
             }
+
+            val (durationInMillis, millisText) = getStringFor(leftDuration.inMilliseconds, DurationUnit.MILLISECONDS)
+            if (durationInMillis != Duration.ZERO) {
+                append(millisText).append("")
+            }
         }.trim()
 
         private fun getStringFor(unitsNumber: Double, unit: DurationUnit): Pair<Duration, String> {
