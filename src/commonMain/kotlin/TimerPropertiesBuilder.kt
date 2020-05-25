@@ -1,10 +1,7 @@
 import alerts.AlertGenerator
 import alerts.AlertGenerators
 import alerts.sound.Sound
-import tasks.AfterElapsedTimeTask
-import tasks.BeforeTimeLeftTask
-import tasks.RepeatableTask
-import tasks.Task
+import tasks.*
 
 class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit) {
     private var tickIntervalInMillis: MillisecondsTimeUnit = 10.milliseconds
@@ -95,6 +92,6 @@ class TimerPropertiesBuilder(private val durationInMillis: MillisecondsTimeUnit)
             tasks.add(timerExpiredTask)
         }
 
-        return TimerProperties(durationInMillis, tickIntervalInMillis, tasks)
+        return TimerProperties(durationInMillis, tickIntervalInMillis, tasks.map { t -> TaskPrototype(t) })
     }
 }

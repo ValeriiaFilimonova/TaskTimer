@@ -36,7 +36,7 @@ internal class TimerMockedExecutorTest {
 
         Timer(properties).start()
 
-        verifySequence {
+        verify(exactly = 1) {
             executor.scheduleAtFixedRate(any(), 0, 10, TimeUnit.MILLISECONDS)
             executor.schedule(any(), 1000, TimeUnit.MILLISECONDS)
         }

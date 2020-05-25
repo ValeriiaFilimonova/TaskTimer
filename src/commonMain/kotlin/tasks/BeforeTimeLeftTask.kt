@@ -7,7 +7,7 @@ import minus
 
 class BeforeTimeLeftTask(
     val beforeTime: MillisecondsTimeUnit,
-    timerDuration: MillisecondsTimeUnit,
+    private val timerDuration: MillisecondsTimeUnit,
     private val generator: AlertGenerator
 ) : AlertTask() {
 
@@ -15,4 +15,8 @@ class BeforeTimeLeftTask(
 
     override val getAlert: () -> Alert
         get() = { generator.generate(this) }
+
+    override fun clone(): Task {
+        return BeforeTimeLeftTask(beforeTime, timerDuration, generator )
+    }
 }

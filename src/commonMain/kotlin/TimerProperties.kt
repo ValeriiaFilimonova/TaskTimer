@@ -1,7 +1,7 @@
-import tasks.Task
+import tasks.TaskPrototype
 
 data class TimerProperties constructor(
     val durationInMillis: MillisecondsTimeUnit,
     val tickIntervalInMillis: MillisecondsTimeUnit,
-    val tasks: Iterable<Task>
+    val taskPrototypes: Iterable<TaskPrototype>
 )

@@ -11,4 +11,8 @@ class AfterElapsedTimeTask(
 
     override val getAlert: () -> Alert
         get() = { generator.generate(this) }
+
+    override fun clone(): Task {
+        return AfterElapsedTimeTask(executionTimeInMillis, generator)
+    }
 }

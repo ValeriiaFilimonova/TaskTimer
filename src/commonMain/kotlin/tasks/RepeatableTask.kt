@@ -39,4 +39,8 @@ class RepeatableTask(
 
         super.execute()
     }
+
+    override fun clone(): Task {
+        return RepeatableTask(repeatEvery, repeatFrom, repeatTill, generator)
+    }
 }

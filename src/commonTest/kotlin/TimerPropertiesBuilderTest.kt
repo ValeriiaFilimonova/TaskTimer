@@ -35,9 +35,9 @@ open class TimerPropertiesBuilderTest {
     fun buildProperties_withNotNullFinalAlarm_shouldAddAfterElapsedTask() {
         val timerProperties = TimerPropertiesBuilder(1.minutes).build()
 
-        assertEquals(timerProperties.tasks.count(), 1)
+        assertEquals(timerProperties.taskPrototypes.count(), 1)
 
-        val finalAlarmTask = timerProperties.tasks.first()
+        val finalAlarmTask = timerProperties.taskPrototypes.first().getTask()
         assertTrue(finalAlarmTask is AfterElapsedTimeTask)
         assertEquals(timerProperties.durationInMillis, finalAlarmTask.executionTimeInMillis)
 
@@ -57,7 +57,7 @@ open class TimerPropertiesBuilderTest {
     @Test
     fun finalAlarm_withNullSound_shouldNotAddTaskForFinalAlarm() {
         val timerProperties = TimerPropertiesBuilder(1.minutes).finalAlarm(null).build()
-        assertEquals(0, timerProperties.tasks.count())
+        assertEquals(0, timerProperties.taskPrototypes.count())
     }
 
     @Test
@@ -65,7 +65,7 @@ open class TimerPropertiesBuilderTest {
         val expectedSound = Sound.PLAYFUL_MOOD
         val timerProperties = TimerPropertiesBuilder(1.minutes).finalAlarm(expectedSound).build()
 
-        val finalAlarmTask = timerProperties.tasks.first() as AlertTask
+        val finalAlarmTask = timerProperties.taskPrototypes.first().getTask() as AlertTask
         val finalAlarmAlert = finalAlarmTask.getAlert() as SoundAlert
 
         assertEquals(expectedSound, finalAlarmAlert.sound)
@@ -85,9 +85,9 @@ open class TimerPropertiesBuilderTest {
         val expectedTaskTime = 30.seconds
         val timerProperties = TimerPropertiesBuilder(1.minutes).afterPassed(expectedTaskTime, fakeGenerator).build()
 
-        assertEquals(2, timerProperties.tasks.count())
-        assertTrue(timerProperties.tasks.all { t -> t is AfterElapsedTimeTask })
-        assertEquals(expectedTaskTime, timerProperties.tasks.first().executionTimeInMillis)
+        assertEquals(2, timerProperties.taskPrototypes.count())
+        assertTrue(timerProperties.taskPrototypes.all { t -> t.getTask() is AfterElapsedTimeTask })
+        assertEquals(expectedTaskTime, timerProperties.taskPrototypes.first().getTask().executionTimeInMillis)
     }
 
     @Test
@@ -103,9 +103,9 @@ open class TimerPropertiesBuilderTest {
     fun beforeLeft_withProperParameters_shouldAddBeforeLeftTask() {
         val timerProperties = TimerPropertiesBuilder(1.minutes).beforeLeft(15.seconds, fakeGenerator).build()
 
-        assertEquals(2, timerProperties.tasks.count())
+        assertEquals(2, timerProperties.taskPrototypes.count())
 
-        val beforeLeftTask = timerProperties.tasks.first()
+        val beforeLeftTask = timerProperties.taskPrototypes.first().getTask()
         assertTrue(beforeLeftTask is BeforeTimeLeftTask)
         assertEquals(45.seconds, beforeLeftTask.executionTimeInMillis)
     }
@@ -142,9 +142,9 @@ open class TimerPropertiesBuilderTest {
         val timerProperties =
             TimerPropertiesBuilder(2.minutes).repeatEvery(30.seconds, generator = fakeGenerator).build()
 
-        assertEquals(2, timerProperties.tasks.count())
+        assertEquals(2, timerProperties.taskPrototypes.count())
 
-        val repeatableTask = timerProperties.tasks.first()
+        val repeatableTask = timerProperties.taskPrototypes.first().getTask()
         assertTrue(repeatableTask is RepeatableTask)
         assertEquals(30.seconds, repeatableTask.repeatEvery)
         assertEquals(30.seconds, repeatableTask.repeatFrom)
@@ -157,9 +157,9 @@ open class TimerPropertiesBuilderTest {
             .repeatEvery(15.seconds, 10.seconds, 5.minutes, fakeGenerator)
             .build()
 
-        assertEquals(2, timerProperties.tasks.count())
+        assertEquals(2, timerProperties.taskPrototypes.count())
 
-        val repeatableTask = timerProperties.tasks.first()
+        val repeatableTask = timerProperties.taskPrototypes.first().getTask()
         assertTrue(repeatableTask is RepeatableTask)
         assertEquals(15.seconds, repeatableTask.repeatEvery)
         assertEquals(10.seconds, repeatableTask.repeatFrom)
@@ -181,9 +181,9 @@ open class TimerPropertiesBuilderTest {
             .remindAfterFinishEvery(5.seconds, fakeGenerator)
             .build()
 
-        assertEquals(2, timerProperties.tasks.count())
+        assertEquals(2, timerProperties.taskPrototypes.count())
 
-        val repeatableTask = timerProperties.tasks.first()
+        val repeatableTask = timerProperties.taskPrototypes.first().getTask()
         assertTrue(repeatableTask is RepeatableTask)
         assertEquals(5.seconds, repeatableTask.repeatEvery)
         assertEquals(35.seconds, repeatableTask.repeatFrom)
@@ -198,6 +198,10 @@ open class TimerPropertiesBuilderTest {
 
             override fun execute() {
                 TODO("do nothing")
+            }
+
+            override fun clone(): Task {
+                return this
             }
         }
         val (duration, tickInterval, tasks) = TimerPropertiesBuilder(20.minutes)
@@ -214,25 +218,25 @@ open class TimerPropertiesBuilderTest {
         assertEquals(30.seconds, tickInterval)
         assertEquals(6, tasks.count())
 
-        val customTask = tasks.elementAt(0)
+        val customTask = tasks.elementAt(0).getTask()
         assertFalse(customTask is AlertTask)
         assertEquals(40.seconds, customTask.executionTimeInMillis)
 
-        val afterPassedTask = tasks.elementAt(1)
+        val afterPassedTask = tasks.elementAt(1).getTask()
         assertTrue(afterPassedTask is AfterElapsedTimeTask)
         assertEquals(10.minutes, afterPassedTask.executionTimeInMillis)
         val afterPassedAlert = afterPassedTask.getAlert()
         assertTrue(afterPassedAlert is VoiceAlert)
         assertEquals("half of the time elapsed", afterPassedAlert.text)
 
-        val beforeLeftTask = tasks.elementAt(2)
+        val beforeLeftTask = tasks.elementAt(2).getTask()
         assertTrue(beforeLeftTask is BeforeTimeLeftTask)
         assertEquals(beforeLeftTask.executionTimeInMillis, 19.minutes)
         val beforeLeftAlert = beforeLeftTask.getAlert()
         assertTrue(beforeLeftAlert is VoiceAlert)
         assertEquals("1 minute left", beforeLeftAlert.text)
 
-        val repeatEveryTask = tasks.elementAt(3)
+        val repeatEveryTask = tasks.elementAt(3).getTask()
         assertTrue(repeatEveryTask is RepeatableTask)
         assertEquals(repeatEveryTask.repeatEvery, 1.minutes)
         assertEquals(repeatEveryTask.repeatFrom, 1.minutes)
@@ -242,13 +246,13 @@ open class TimerPropertiesBuilderTest {
         assertTrue(repeatEveryAlert is SoundAlert)
         assertEquals(Sound.TING_A_LING, repeatEveryAlert.sound)
 
-        val remindAfterTask = tasks.elementAt(4)
+        val remindAfterTask = tasks.elementAt(4).getTask()
         assertTrue(remindAfterTask is RepeatableTask)
         assertEquals(remindAfterTask.repeatEvery, 10.seconds)
         assertEquals(remindAfterTask.repeatFrom, 20.minutes + 10.seconds)
         assertTrue(remindAfterTask.getAlert() is SoundAlert)
 
-        val finalAlarmTask = tasks.elementAt(5)
+        val finalAlarmTask = tasks.elementAt(5).getTask()
         assertTrue(finalAlarmTask is AfterElapsedTimeTask)
         assertEquals(duration, finalAlarmTask.executionTimeInMillis)
     }

@@ -7,6 +7,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.data.Offset
 import org.junit.jupiter.api.*
 import tasks.AlertTask
+import kotlin.time.ExperimentalTime
 
 @Tags(Tag("wait"))
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -443,6 +444,29 @@ internal class TimerTest {
         assertThat(afterFinishCaptures.size).isEqualTo(2)
         assertThat(afterFinishCaptures[0].executionTimeTowards(startCapture)).isCloseTo(160L + pause, executionOffset)
         assertThat(afterFinishCaptures[1].executionTimeTowards(startCapture)).isCloseTo(220L + pause, executionOffset)
+    }
+
+    @Test
+    @ExperimentalTime
+    fun start_theSameTimerTwice_shouldSayTimeCorrectlyForRepeatableTask() {
+        val speaker = DependenciesFactory.getSpeaker()
+        val player = DependenciesFactory.getPlayer()
+        val timer = timerWithTask(200.milliseconds, finalAlarm = Sound.PRE_DAWN_SLEEP)
+            .repeatEvery(84.milliseconds, generator = AlertGenerators.getSayTimeAlertGenerator())
+            .timer()
+
+        timer.start()
+        Thread.sleep(timer.duration.toLong())
+        timer.stop()
+        timer.start()
+        Thread.sleep(timer.duration.toLong())
+        timer.stop()
+
+        verify(exactly = 2) {
+            speaker.say("84 milliseconds passed")
+            speaker.say("168 milliseconds passed")
+            player.playOnce(Sound.PRE_DAWN_SLEEP)
+        }
     }
 
     private fun TimeCaptor.trackAlert(label: String): AlertGenerator {

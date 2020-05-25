@@ -1,21 +1,20 @@
 import alerts.Alert
+import alerts.AlertGenerator
+import tasks.AlertTask
 import tasks.RepeatableTask
 import tasks.Task
+import tasks.TaskPrototype
 import java.util.concurrent.RunnableScheduledFuture
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeUnit.SECONDS
-import kotlin.properties.Delegates
 
 actual class Timer actual constructor(actual val properties: TimerProperties) {
     private val tickTime = 10.milliseconds
 
     private var state = TimerState.STOPPED
 
-    private var taskExecutionService = DependenciesFactory.createExecutor()
+    private val taskExecutor = TaskExecutor()
 
-    private var timerTaskToFutureMap: MutableMap<Task, ScheduledFuture<*>> = HashMap()
+    private var timerTaskToFutureMap: Map<Task, ScheduledFuture<*>> = HashMap()
 
     init {
         if (properties.tickIntervalInMillis % tickTime != 0L) {
@@ -30,34 +29,32 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
         private set
 
     actual fun start() = moveToState(TimerState.STARTED) {
-        properties.tasks
-            .plus(onTickTask)
-            .sortedBy { it.executionTimeInMillis }
-            .forEach { task ->
-                if (task is RepeatableTask) {
-                    taskExecutionService.scheduleAtFixedRate(task)
-                } else {
-                    taskExecutionService.schedule(task)
-                }
-            }
+        elapsedTime = 0.milliseconds
+        timerTaskToFutureMap = properties.taskPrototypes
+            .plus(onTickPrototype)
+            .map(TaskPrototype::getTask)
+            .map { it to schedule(it) }
+            .toMap()
 
         onStart?.invoke()
     }
 
     actual fun stop() = moveToState(TimerState.STOPPED) {
-        timerTaskToFutureMap.clear()
-        taskExecutionService.shutdown()
-
-        if (!taskExecutionService.awaitTermination(1, SECONDS)) {
-            taskExecutionService.shutdownNow()
-        }
+        taskExecutor.shutdownGracefully()
 
         onStop?.invoke()
     }
 
+    actual fun resume() = moveToState(TimerState.RESUMED) {
+        timerTaskToFutureMap = timerTaskToFutureMap.keys
+            .map { it to schedule(it) }
+            .toMap()
+
+        onResume?.invoke()
+    }
+
     actual fun pause() = moveToState(TimerState.PAUSED) {
-        taskExecutionService.shutdownNow()
-        taskExecutionService.awaitTermination(1, SECONDS)
+        taskExecutor.shutdownAbruptly()
 
         timerTaskToFutureMap = timerTaskToFutureMap
             .mapValues { (_, future) -> future as RunnableScheduledFuture<*> }
@@ -65,22 +62,6 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
             .toMutableMap()
 
         onPause?.invoke()
-    }
-
-    actual fun resume() = moveToState(TimerState.RESUMED) {
-        taskExecutionService = DependenciesFactory.createExecutor()
-
-        timerTaskToFutureMap.keys
-            .sortedBy { it.executionTimeInMillis }
-            .forEach { task ->
-                if (task is RepeatableTask) {
-                    taskExecutionService.scheduleAtFixedRate(task, task.newDelay(elapsedTime))
-                } else {
-                    taskExecutionService.schedule(task, task.executionTimeInMillis - elapsedTime)
-                }
-            }
-
-        onResume?.invoke()
     }
 
     actual var onStart: (() -> Unit)? = null
@@ -93,30 +74,43 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
     actual var onTick: (() -> Unit)? = null
 
-    private val onTickTask = RepeatableTask(tickTime, 0.milliseconds, alert = object : Alert {
-        private var iterations: Int by Delegates.observable(0) { _, _, newValue ->
-            elapsedTime = tickTime * (newValue - 1)
+    private val onTickPrototype = TaskPrototype(RepeatableTask(tickTime, 0.milliseconds, null, object : AlertGenerator {
+        private val alert = object : Alert {
+            override fun alert() {
+                if (taskExecutor.isShutdown) {
+                    return
+                }
+
+                if (elapsedTime > 0L && elapsedTime % properties.tickIntervalInMillis == 0L) {
+                    onTick?.invoke()
+                }
+
+                timerTaskToFutureMap
+                    .filterKeys { task -> task is RepeatableTask && task.repeatFrom < duration }
+                    .filterKeys { task -> task is RepeatableTask && task.repeatTill != null && task.repeatTill <= elapsedTime }
+                    .forEach { (_, future) -> future.cancel(true) }
+            }
         }
 
-        override fun alert() {
-            iterations++
-            executeOnTick()
-        }
-    })
+        override fun generate(task: AlertTask, vararg params: Any): Alert {
+            elapsedTime = task.executionTimeInMillis
 
-    private fun executeOnTick() {
-        if (taskExecutionService.isShutdown) {
-            return
+            return alert
         }
+    }))
 
-        if (elapsedTime > 0L && elapsedTime % properties.tickIntervalInMillis == 0L) {
-            onTick?.invoke()
+    private fun schedule(task: Task): ScheduledFuture<*> {
+        return if (task is RepeatableTask) {
+            val newDelay = if (task.executionTimeInMillis.equals(0L)) {
+                task.repeatFrom - elapsedTime
+            } else {
+                task.executionTimeInMillis + task.repeatEvery - elapsedTime
+            }
+
+            taskExecutor.scheduleAtFixedRate(task, newDelay)
+        } else {
+            taskExecutor.schedule(task, task.executionTimeInMillis - elapsedTime)
         }
-
-        timerTaskToFutureMap
-            .filterKeys { task -> task is RepeatableTask && task.repeatFrom < duration }
-            .filterKeys { task -> task is RepeatableTask && task.repeatTill != null && task.repeatTill <= elapsedTime }
-            .forEach { (_, future) -> future.cancel(true) }
     }
 
     private fun moveToState(newState: TimerState, block: () -> Unit) {
@@ -126,34 +120,6 @@ actual class Timer actual constructor(actual val properties: TimerProperties) {
 
         state = newState
         block.invoke()
-    }
-
-    private fun ScheduledExecutorService.scheduleAtFixedRate(
-        task: RepeatableTask,
-        delayInMillis: MillisecondsTimeUnit = task.repeatFrom
-    ): ScheduledFuture<*> {
-
-        return scheduleAtFixedRate(
-            { task.execute() }, delayInMillis.toLong(), task.repeatEvery.toLong(), MILLISECONDS
-        ).also { timerTaskToFutureMap[task] = it }
-    }
-
-    private fun ScheduledExecutorService.schedule(
-        task: Task,
-        executionTimeInMillis: MillisecondsTimeUnit = task.executionTimeInMillis
-    ): ScheduledFuture<*> {
-
-        return schedule(
-            { task.execute() }, executionTimeInMillis.toLong(), MILLISECONDS
-        ).also { timerTaskToFutureMap[task] = it }
-    }
-
-    private fun RepeatableTask.newDelay(elapsedTime: MillisecondsTimeUnit): MillisecondsTimeUnit {
-        return if (executionTimeInMillis.equals(0L)) {
-            repeatFrom - elapsedTime
-        } else {
-            executionTimeInMillis + repeatEvery - elapsedTime
-        }
     }
 }
 
