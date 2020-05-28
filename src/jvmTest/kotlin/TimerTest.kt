@@ -240,7 +240,6 @@ internal class TimerTest {
         }
 
         val onTickCaptures = captor["onTick"]
-        // TODO decide on after finish behavior for onTick method
         assertThat(onTickCaptures.size).isEqualTo(13)
         assertThat(onTickCaptures.firstExecution()).isCloseTo(50L, executionOffset)
         assertThat(onTickCaptures.lastExecution()).isCloseTo(650L, executionOffset)

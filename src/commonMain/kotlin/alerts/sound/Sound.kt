@@ -1,6 +1,5 @@
 package alerts.sound
 
-// TODO it doesn't make sense to loop some of the sounds
 enum class Sound(
     val resourceName: String,
     val duration: Long,
