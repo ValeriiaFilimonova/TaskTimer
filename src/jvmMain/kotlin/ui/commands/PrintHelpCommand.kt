@@ -2,10 +2,11 @@ package ui.commands
 
 import picocli.CommandLine
 import picocli.CommandLine.*
-import ui.screen.JvmTerminalScreen
+import picocli.CommandLine.Model.CommandSpec
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 import kotlin.time.ExperimentalTime
+
 
 @Command(
     name = "help",
@@ -13,6 +14,9 @@ import kotlin.time.ExperimentalTime
 )
 @ExperimentalTime
 class PrintHelpCommand : Runnable {
+    @Spec
+    lateinit var spec: CommandSpec
+
     @ParentCommand
     lateinit var applicationCommand: TimerApplicationCommand
 
@@ -38,7 +42,8 @@ class PrintHelpCommand : Runnable {
     }
 
     private fun printCommandUsage(command: Any) {
-        CommandLine(command).usage(JvmTerminalScreen.printStream, Help.Ansi.OFF)
+        val out = spec.commandLine().out
+        CommandLine(command).usage(out, Help.Ansi.OFF)
     }
 }
 
