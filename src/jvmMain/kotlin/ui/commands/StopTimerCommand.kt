@@ -2,7 +2,6 @@ package ui.commands
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.ParentCommand
-import ui.screen.TimerScreen
 import kotlin.time.ExperimentalTime
 
 @Command(
@@ -15,7 +14,6 @@ class StopTimerCommand : TimerSubCommand(){
     override lateinit var applicationCommand: TimerApplicationCommand
 
     override fun run() {
-        TimerScreen.hide()
         timer?.stop()
         timer = null
     }

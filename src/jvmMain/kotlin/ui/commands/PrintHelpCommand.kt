@@ -2,11 +2,9 @@ package ui.commands
 
 import picocli.CommandLine
 import picocli.CommandLine.*
-import kotlin.reflect.KClass
+import ui.screen.JvmTerminalScreen
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.javaField
 import kotlin.time.ExperimentalTime
 
 @Command(
@@ -18,26 +16,39 @@ class PrintHelpCommand : Runnable {
     @ParentCommand
     lateinit var applicationCommand: TimerApplicationCommand
 
+    @Parameters(
+        defaultValue = "timer",
+        description = [
+            "Command name to print help for",
+            "Supported values: \${COMPLETION-CANDIDATES}."
+        ]
+    )
+    lateinit var command: CommandName
+
     override fun run() {
-        val annotation = TimerApplicationCommand::class.findAnnotation<Command>() ?: return
+        if (command == CommandName.timer) {
+            printCommandUsage(applicationCommand)
+        } else {
+            val annotation = TimerApplicationCommand::class.findAnnotation<Command>() ?: return
+            val subcommand = annotation.subcommands
+                .first { kClass -> kClass.findAnnotation<Command>()?.name == command.toString() }
 
-        printCommandUsage(applicationCommand)
-        printSubCommandsUsages(annotation.subcommands)
-    }
-
-    private fun printSubCommandsUsages(commandClasses: Array<KClass<*>>) {
-        for (kClass in commandClasses) {
-            val hasOptions = kClass.memberProperties.any {
-                it.javaField?.isAnnotationPresent(Option::class.java) ?: false
-            }
-
-            if (hasOptions) {
-                printCommandUsage(kClass.createInstance())
-            }
+            printCommandUsage(subcommand.createInstance())
         }
     }
 
     private fun printCommandUsage(command: Any) {
-        CommandLine(command).usage(System.out)
+        CommandLine(command).usage(JvmTerminalScreen.printStream, Help.Ansi.OFF)
     }
+}
+
+enum class CommandName {
+    timer,
+    create,
+    task,
+    start,
+    stop,
+    resume,
+    pause,
+    default
 }

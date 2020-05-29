@@ -16,11 +16,10 @@ import kotlin.time.ExperimentalTime
         "Alias to the next set of commands:",
         "  create -d=DURATION -i=1.s",
         "  task -c=AFTER_FINISH_EVERY -t=30.s -a=SAY_TIME",
-        "  start -o"
+        "  start"
     ],
-    headerHeading = "%n########################################################################%n",
-    synopsisHeading = "%n",
-    descriptionHeading = "%nDescription: ",
+    synopsisHeading = "%n%n",
+    descriptionHeading = "%nDescription:%n",
     optionListHeading = "%nOptions:%n"
 )
 @ExperimentalTime

@@ -12,9 +12,8 @@ import kotlin.time.ExperimentalTime
 @Command(
     name = "task",
     description = ["Add task for the current timer."],
-    headerHeading = "%n########################################################################%n",
-    synopsisHeading = "%n",
-    descriptionHeading = "%nDescription: ",
+    synopsisHeading = "%n%n",
+    descriptionHeading = "%nDescription:%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%nExamples:%n",
     footer = [

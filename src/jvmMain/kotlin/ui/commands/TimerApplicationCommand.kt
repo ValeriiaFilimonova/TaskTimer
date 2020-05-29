@@ -17,10 +17,11 @@ import kotlin.time.ExperimentalTime
         "timer task --timer=10.s --class=BEFORE_LEFT --action=SAY_TEXT -m=\"10 seconds left\"",
         "timer start"
     ],
+    // todo add clear command
     subcommands = [
         CreateTimerCommand::class, AddTaskTimerCommand::class,
         StartTimerCommand::class, StopTimerCommand::class, ResumeTimerCommand::class, PauseTimerCommand::class,
-        DefaultTimerCommand::class, PrintHelpCommand::class
+        DefaultTimerCommand::class, PrintHelpCommand::class, QuitAppCommand::class
     ],
     descriptionHeading = "%nDescription:%n",
     commandListHeading = "%nCommands:%n"
