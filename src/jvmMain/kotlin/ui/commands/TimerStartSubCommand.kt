@@ -2,10 +2,13 @@ package ui.commands
 
 import JvmTimerError
 import Timer
+import alerts.sound.JvmSoundPlayer
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 abstract class TimerStartSubCommand : TimerSubCommand() {
+    private val player = (DependenciesFactory.getPlayer() as JvmSoundPlayer)
+
     protected fun createAndStartNewTimer(): Timer {
         try {
             timer?.stop()
@@ -16,6 +19,8 @@ abstract class TimerStartSubCommand : TimerSubCommand() {
 
             onStart = { terminalScreen.setTime(duration.toLong()) }
             onTick = { terminalScreen.setTime(duration.toLong() - elapsedTime.toLong()) }
+            onPause = { player.terminate() }
+            onStop = { player.terminate() }
 
             start()
         }

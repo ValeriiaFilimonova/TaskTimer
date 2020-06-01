@@ -5,6 +5,7 @@ import ui.converters.SoundConverter
 import ui.converters.TimeDurationConverter
 import ui.handlers.ExecutionExceptionHandler
 import ui.handlers.ParameterExceptionHandler
+import java.lang.Exception
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
@@ -34,14 +35,23 @@ fun main() {
     commandLine.execute("help")
 
     while (true) {
-        val commandInput = appCommand.readInput()
+        var args: Array<String>? = null
 
-        if (commandInput == null) {
-            Thread.sleep(10)
-            continue
+        try {
+            val commandInput = appCommand.readInput()
+
+            if (commandInput == null) {
+                Thread.sleep(10)
+                continue
+            }
+
+            args = commandInput.split(Regex(" (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")).toTypedArray()
+        } catch (e: Exception) {
+            commandLine.executionExceptionHandler.handleExecutionException(e, commandLine, null)
         }
 
-        val args = commandInput.split(Regex(" (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")).toTypedArray()
-        commandLine.execute(*args)
+        if (args != null) {
+            commandLine.execute(*args)
+        }
     }
 }
