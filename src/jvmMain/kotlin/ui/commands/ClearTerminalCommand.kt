@@ -4,7 +4,6 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.ParentCommand
 import kotlin.time.ExperimentalTime
 
-// todo add ctrl+l
 @Command(
     name = "clear",
     description = ["Clears command input/output area"]

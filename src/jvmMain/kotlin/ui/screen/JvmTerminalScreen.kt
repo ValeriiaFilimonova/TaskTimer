@@ -334,17 +334,21 @@ object JvmTerminalScreen : TerminalScreen {
         fun pollCommand(): String? {
             val keyStroke = screen.pollInput() ?: return null
 
-            var command: String? = null
+
+            if (keyStroke.isCtrlDown && keyStroke.character == 'l') {
+                clear()
+                return null
+            }
 
             when (keyStroke.keyType) {
-                KeyType.Enter -> command = getLastCommand()
+                KeyType.Enter -> return getLastCommand()
                 KeyType.Backspace -> removeCharacter()
                 KeyType.Character -> printCharacter(keyStroke.character)
                 KeyType.ArrowUp -> showPreviousCommand()
                 KeyType.ArrowDown -> showNextCommand()
             }
 
-            return command
+            return null
         }
 
         fun printPlaceholder() {

@@ -3,6 +3,8 @@ import picocli.CommandLine
 import ui.commands.TimerApplicationCommand
 import ui.converters.SoundConverter
 import ui.converters.TimeDurationConverter
+import ui.handlers.ExecutionExceptionHandler
+import ui.handlers.ParameterExceptionHandler
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
@@ -20,6 +22,9 @@ fun main() {
         this.executionStrategy = CommandLine.RunLast()
         this.out = terminalScreen.getOutput()
         this.err = terminalScreen.getOutput()
+
+        this.executionExceptionHandler = ExecutionExceptionHandler()
+        this.parameterExceptionHandler = ParameterExceptionHandler()
 
         registerConverter(MillisecondsTimeUnit::class.java, TimeDurationConverter())
         registerConverter(Sound::class.java, SoundConverter())
