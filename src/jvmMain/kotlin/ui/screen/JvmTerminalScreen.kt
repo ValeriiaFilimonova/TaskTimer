@@ -10,6 +10,7 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
@@ -25,6 +26,7 @@ object JvmTerminalScreen : TerminalScreen {
     private const val PLACEHOLDER = "timer>"
 
     private lateinit var resizeListeners: MutableList<(size: TerminalSize) -> Unit>
+    private var resizeFuture: ScheduledFuture<*>? = null
 
     private val outputStream = PipedOutputStream()
     private val inputStream = PipedInputStream(outputStream)
@@ -51,16 +53,16 @@ object JvmTerminalScreen : TerminalScreen {
     private val refreshOfTypeNeeded = AtomicReference(RefreshType.NONE)
 
     init {
-        setResizeListener()
-        watchRefresh()
-        watchOutput()
+        watchOnResizeEvents()
+        watchOnOutputStream()
+        watchIfScreenRefreshNeeded()
         clear()
     }
 
     override fun clear() {
         screen.clear()
-        timeOutputZone.displayTime(0)
         resizeListeners.forEach { l -> l.invoke(terminalSize) }
+        timeOutputZone.displayTime(0)
         commandsZone.printPlaceholder()
         refreshOfTypeNeeded.set(RefreshType.COMPLETE)
     }
@@ -98,10 +100,10 @@ object JvmTerminalScreen : TerminalScreen {
     }
 
     override fun setResizeListener(listener: (size: TerminalSize) -> Unit) {
-//        resizeListeners.add(listener)
+        resizeListeners.add(listener)
     }
 
-    private fun watchRefresh() {
+    private fun watchIfScreenRefreshNeeded() {
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
             when (refreshOfTypeNeeded.get()) {
                 RefreshType.PARTIAL -> {
@@ -118,7 +120,7 @@ object JvmTerminalScreen : TerminalScreen {
         }, 500, 100, TimeUnit.MILLISECONDS)
     }
 
-    private fun watchOutput() {
+    private fun watchOnOutputStream() {
         Executors.newSingleThreadExecutor().execute {
             val bytesBuffer = mutableListOf<Byte>()
 
@@ -143,16 +145,24 @@ object JvmTerminalScreen : TerminalScreen {
         }
     }
 
-    // todo fix listeners
-    private fun setResizeListener() {
+    private fun watchOnResizeEvents() {
+        val executor = Executors.newSingleThreadScheduledExecutor()
+
         resizeListeners = listOf(timeOutputZone, printOutputZone, commandsZone)
             .map { z -> z.resizeListener }
             .toMutableList()
 
-//        terminal.addResizeListener { _, newSize ->
-//            terminalSize = TerminalSize(newSize.columns, newSize.rows)
-//            clear()
-//        }
+        terminal.addResizeListener { _, newSize ->
+            if (resizeFuture?.isDone == false) {
+                resizeFuture!!.cancel(true)
+            }
+
+            resizeFuture = executor.schedule({
+                terminalSize = TerminalSize(newSize.columns, newSize.rows)
+                clear()
+                screen.doResizeIfNecessary()
+            }, 700, TimeUnit.MILLISECONDS)
+        }
     }
 
     //region Helpers
@@ -289,10 +299,6 @@ object JvmTerminalScreen : TerminalScreen {
             currentRow = topRow
         }
 
-        init {
-            resizeListener.invoke(terminalSize)
-        }
-
         override fun output(text: String) {
             super.output(text + "\n")
         }
@@ -317,7 +323,6 @@ object JvmTerminalScreen : TerminalScreen {
         }
 
         init {
-            resizeListener.invoke(terminalSize)
             resetCommandsIterator()
         }
 

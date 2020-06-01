@@ -11,7 +11,8 @@ import kotlin.time.ExperimentalTime
 @Command(
     name = "default",
     description = [
-        "Create and start a timer with default configuration. Alias to the next set of commands:",
+        "Create and start a timer with default configuration.",
+        "Alias to the next set of commands:",
         "  create -d=DURATION -i=1.s",
         "  task -c=AFTER_FINISH_EVERY -t=30.s -a=SAY_TIME",
         "  start"

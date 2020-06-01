@@ -7,7 +7,6 @@ import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 import kotlin.time.ExperimentalTime
 
-
 @Command(
     name = "help",
     description = ["Print usage"]

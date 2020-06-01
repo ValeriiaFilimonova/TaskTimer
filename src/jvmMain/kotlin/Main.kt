@@ -8,22 +8,21 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 fun main() {
     val appCommand = TimerApplicationCommand()
-    val commandLine = CommandLine(appCommand).also {
-        val terminalScreen = appCommand.terminalScreen.apply {
-            setResizeListener {
-//                it.usageHelpWidth = columns
+    val commandLine = CommandLine(appCommand).apply {
+        val terminalScreen = appCommand.terminalScreen.also {
+            it.setResizeListener { size ->
+                this.usageHelpWidth = size.columns
             }
         }
 
-        it.isCaseInsensitiveEnumValuesAllowed = true
-        it.isUsageHelpAutoWidth = true
-        it.usageHelpWidth = terminalScreen.getSize().columns
-        it.executionStrategy = CommandLine.RunLast()
-        it.out = terminalScreen.getOutput()
-        it.err = terminalScreen.getOutput()
+        this.isCaseInsensitiveEnumValuesAllowed = true
+        this.isUsageHelpAutoWidth = true
+        this.executionStrategy = CommandLine.RunLast()
+        this.out = terminalScreen.getOutput()
+        this.err = terminalScreen.getOutput()
 
-        it.registerConverter(MillisecondsTimeUnit::class.java, TimeDurationConverter())
-        it.registerConverter(Sound::class.java, SoundConverter())
+        registerConverter(MillisecondsTimeUnit::class.java, TimeDurationConverter())
+        registerConverter(Sound::class.java, SoundConverter())
     }
 
     appCommand.run()
