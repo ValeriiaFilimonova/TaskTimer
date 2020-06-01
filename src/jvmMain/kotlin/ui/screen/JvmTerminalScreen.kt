@@ -1,7 +1,6 @@
 package ui.screen
 
 import com.googlecode.lanterna.TerminalPosition
-import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.TerminalTextUtils
 import com.googlecode.lanterna.graphics.TextGraphics
 import com.googlecode.lanterna.input.KeyType
@@ -11,55 +10,63 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.util.concurrent.Executors
-import kotlin.collections.ArrayList
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
-import com.googlecode.lanterna.screen.TerminalScreen as PicocliTerminalScreen1
+import com.googlecode.lanterna.TerminalSize as LanternaTerminalSize
+import com.googlecode.lanterna.screen.TerminalScreen as LanternaTerminalScreen
 
 @ExperimentalTime
-object JvmTerminalScreen: TerminalScreen {
+object JvmTerminalScreen : TerminalScreen {
     private const val FIXED_NUMBER_OF_TIMER_COLUMNS = 22
     private const val FIXED_NUMBER_OF_TIMER_ROWS = 7
     private const val PLACEHOLDER = "timer>"
 
-    private val screen: PicocliTerminalScreen1
-    private val graphics: TextGraphics
+    private lateinit var resizeListeners: MutableList<(size: TerminalSize) -> Unit>
 
+    private val outputStream = PipedOutputStream()
+    private val inputStream = PipedInputStream(outputStream)
+    private val printWriter = PrintWriter(outputStream)
+
+    private val terminalFactory = DefaultTerminalFactory().apply {
+        setTerminalEmulatorTitle("Task Timer")
+        setInitialTerminalSize(LanternaTerminalSize(80, 50))
+    }
+    private val terminal = terminalFactory.createTerminal()
+    private val screen = LanternaTerminalScreen(terminal)
+    private val graphics: TextGraphics = screen.newTextGraphics()
+    private var terminalSize = TerminalSize(screen.terminalSize.columns, screen.terminalSize.rows)
     private var cursorPosition
         get() = screen.cursorPosition
         set(cursorPosition) {
             screen.cursorPosition = cursorPosition
         }
 
-    private val timeOutputZone: TimeOutputZone
-    private val printOutputZone: OutputZone
-    private val commandsZone: CommandsZone
+    private val timeOutputZone = TimeOutputZone()
+    private val printOutputZone = PrintAlertOutputZone()
+    private val commandsZone = CommandsZone()
 
-    private val outputStream = PipedOutputStream()
-    private val inputStream = PipedInputStream(outputStream)
-    private val printWriter = PrintWriter(outputStream)
+    private val refreshOfTypeNeeded = AtomicReference(RefreshType.NONE)
 
     init {
-        val terminalFactory = DefaultTerminalFactory().apply {
-            setTerminalEmulatorTitle("Task Timer")
-            setInitialTerminalSize(TerminalSize(80, 40))
-        }
-        val terminal = terminalFactory.createTerminal()
-
-        screen = PicocliTerminalScreen1(terminal)
-        graphics = screen.newTextGraphics()
-
-        timeOutputZone = TimeOutputZone()
-        printOutputZone = PrintAlertOutputZone()
-        commandsZone = CommandsZone()
-
+        setResizeListener()
+        watchRefresh()
         watchOutput()
+        clear()
+    }
+
+    override fun clear() {
+        screen.clear()
+        timeOutputZone.displayTime(0)
+        resizeListeners.forEach { l -> l.invoke(terminalSize) }
+        commandsZone.printPlaceholder()
+        refreshOfTypeNeeded.set(RefreshType.COMPLETE)
     }
 
     override fun open() {
         screen.startScreen()
-        setTime(0)
     }
 
     override fun close() {
@@ -73,37 +80,87 @@ object JvmTerminalScreen: TerminalScreen {
 
     override fun readCommand(): String? {
         return commandsZone.pollCommand()
+            .also { refreshOfTypeNeeded.set(RefreshType.PARTIAL) }
     }
-
-    // todo resize handle
 
     @ExperimentalTime
     override fun setTime(timeLeftInMilliseconds: Long) {
         timeOutputZone.displayTime(timeLeftInMilliseconds)
-        screen.refresh(Screen.RefreshType.DELTA)
+            .also { refreshOfTypeNeeded.set(RefreshType.PARTIAL) }
     }
 
     override fun getOutput(): PrintWriter {
         return printWriter
     }
 
+    override fun getSize(): TerminalSize {
+        return TerminalSize(terminalSize.columns, terminalSize.rows)
+    }
+
+    override fun setResizeListener(listener: (size: TerminalSize) -> Unit) {
+//        resizeListeners.add(listener)
+    }
+
+    private fun watchRefresh() {
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
+            when (refreshOfTypeNeeded.get()) {
+                RefreshType.PARTIAL -> {
+                    screen.refresh(Screen.RefreshType.DELTA)
+                    refreshOfTypeNeeded.set(RefreshType.NONE)
+                }
+                RefreshType.COMPLETE -> {
+                    screen.refresh(Screen.RefreshType.COMPLETE)
+                    refreshOfTypeNeeded.set(RefreshType.NONE)
+                }
+                else -> {
+                }
+            }
+        }, 500, 100, TimeUnit.MILLISECONDS)
+    }
+
     private fun watchOutput() {
         Executors.newSingleThreadExecutor().execute {
+            val bytesBuffer = mutableListOf<Byte>()
+
             while (true) {
                 val available = inputStream.available()
                 if (available == 0) {
-                    Thread.sleep(10)
+                    if (bytesBuffer.isNotEmpty()) {
+                        commandsZone.output(bytesBuffer)
+                        bytesBuffer.clear()
+                        refreshOfTypeNeeded.set(RefreshType.PARTIAL)
+                    }
+                    Thread.sleep(100)
                     continue
                 }
 
-                val bytes = inputStream.readNBytes(available)
+                val bytesChunk = inputStream.readNBytes(available)
 
-                if (bytes.isNotEmpty()) {
-                    commandsZone.output(bytes)
-                    screen.refresh(Screen.RefreshType.DELTA)
+                if (bytesChunk.isNotEmpty()) {
+                    bytesBuffer.addAll(bytesChunk.toList())
                 }
             }
         }
+    }
+
+    // todo fix listeners
+    private fun setResizeListener() {
+        resizeListeners = listOf(timeOutputZone, printOutputZone, commandsZone)
+            .map { z -> z.resizeListener }
+            .toMutableList()
+
+//        terminal.addResizeListener { _, newSize ->
+//            terminalSize = TerminalSize(newSize.columns, newSize.rows)
+//            clear()
+//        }
+    }
+
+    //region Helpers
+
+    private enum class RefreshType {
+        NONE,
+        PARTIAL,
+        COMPLETE
     }
 
     private interface TerminalZone {
@@ -127,13 +184,17 @@ object JvmTerminalScreen: TerminalScreen {
         val middleRow: Int
             get() = rows / 2 + topRow
 
-        fun reactOnTerminalSizeChange(terminalSize: TerminalSize)
+        val resizeListener: (terminalSize: TerminalSize) -> Unit
     }
 
     private data class Line(val string: String, val returnCarriage: Boolean)
 
     private abstract class OutputZone : TerminalZone {
         protected abstract var currentRow: Int
+
+        fun output(byteList: List<Byte>) {
+            output(byteList.toByteArray())
+        }
 
         fun output(byteArray: ByteArray) {
             output(String(byteArray))
@@ -197,8 +258,7 @@ object JvmTerminalScreen: TerminalScreen {
             displayTime(0)
         }
 
-        override fun reactOnTerminalSizeChange(terminalSize: TerminalSize) {
-        }
+        override val resizeListener: (terminalSize: TerminalSize) -> Unit = {}
 
         fun displayTime(timeLeftInMilliseconds: Long) {
             abs(timeLeftInMilliseconds).milliseconds.toComponents { days, hours, minutes, seconds, _ ->
@@ -224,12 +284,13 @@ object JvmTerminalScreen: TerminalScreen {
         override var bottomRow: Int = FIXED_NUMBER_OF_TIMER_ROWS
         override var currentRow: Int = topRow
 
-        init {
-            reactOnTerminalSizeChange(screen.terminalSize)
+        override val resizeListener: (terminalSize: TerminalSize) -> Unit = {
+            rightColumn = terminalSize.columns
+            currentRow = topRow
         }
 
-        override fun reactOnTerminalSizeChange(terminalSize: TerminalSize) {
-            rightColumn = terminalSize.columns
+        init {
+            resizeListener.invoke(terminalSize)
         }
 
         override fun output(text: String) {
@@ -248,16 +309,16 @@ object JvmTerminalScreen: TerminalScreen {
         private var lastCommand = StringBuilder()
         private lateinit var commandsIterator: ListIterator<String>
 
-        init {
-            reactOnTerminalSizeChange(screen.terminalSize)
-            resetCommandsIterator()
-        }
-
-        override fun reactOnTerminalSizeChange(terminalSize: TerminalSize) {
+        override val resizeListener: (terminalSize: TerminalSize) -> Unit = {
             rightColumn = terminalSize.columns
             bottomRow = terminalSize.rows
             topRow = FIXED_NUMBER_OF_TIMER_ROWS + 1
             currentRow = topRow
+        }
+
+        init {
+            resizeListener.invoke(terminalSize)
+            resetCommandsIterator()
         }
 
         override fun output(text: String) {
@@ -278,9 +339,12 @@ object JvmTerminalScreen: TerminalScreen {
                 KeyType.ArrowDown -> showNextCommand()
             }
 
-            screen.refresh(Screen.RefreshType.DELTA)
-
             return command
+        }
+
+        fun printPlaceholder() {
+            super.output("\n$PLACEHOLDER")
+            cursorPosition = TerminalPosition(PLACEHOLDER.length + 1, currentRow)
         }
 
         private fun getLastCommand(): String {
@@ -333,13 +397,9 @@ object JvmTerminalScreen: TerminalScreen {
             lastCommand = StringBuilder(command)
         }
 
-        private fun printPlaceholder() {
-            super.output("\n$PLACEHOLDER")
-            cursorPosition = TerminalPosition(PLACEHOLDER.length + 1, currentRow)
-        }
-
         private fun resetCommandsIterator() {
             commandsIterator = commands.asReversed().listIterator()
         }
     }
+    //endregion
 }

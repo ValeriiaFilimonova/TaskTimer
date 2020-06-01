@@ -1,7 +1,7 @@
 package ui.commands
 
-import Timer
-import picocli.CommandLine.*
+import picocli.CommandLine.Command
+import picocli.CommandLine.ParentCommand
 import kotlin.time.ExperimentalTime
 
 @Command(
@@ -12,17 +12,11 @@ import kotlin.time.ExperimentalTime
     optionListHeading = "%nOptions:%n"
 )
 @ExperimentalTime
-class StartTimerCommand : TimerSubCommand() {
+class StartTimerCommand : TimerStartSubCommand() {
     @ParentCommand
     override lateinit var applicationCommand: TimerApplicationCommand
 
     override fun run() {
-        val screen = DependenciesFactory.getTerminalScreen()
-        val newTimer = Timer(properties!!.build()).apply {
-            onTick = { screen.setTime(duration.toLong() - elapsedTime.toLong()) }
-            onStart = { screen.setTime(duration.toLong()) }
-        }
-        newTimer.start()
-        timer = newTimer
+        timer = createAndStartNewTimer()
     }
 }

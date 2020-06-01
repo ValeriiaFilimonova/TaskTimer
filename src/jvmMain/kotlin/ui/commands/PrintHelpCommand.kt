@@ -23,8 +23,7 @@ class PrintHelpCommand : Runnable {
     @Parameters(
         defaultValue = "timer",
         description = [
-            "Command name to print help for",
-            "Supported values: \${COMPLETION-CANDIDATES}."
+            "Command name to print help for. Supported values: \${COMPLETION-CANDIDATES}."
         ]
     )
     lateinit var command: CommandName
@@ -42,8 +41,13 @@ class PrintHelpCommand : Runnable {
     }
 
     private fun printCommandUsage(command: Any) {
-        val out = spec.commandLine().out
-        CommandLine(command).usage(out, Help.Ansi.OFF)
+        val commandLine = spec.commandLine()
+
+        CommandLine(command).run {
+            setUsageHelpWidth(commandLine.usageHelpWidth)
+            setUsageHelpAutoWidth(commandLine.isUsageHelpAutoWidth)
+            usage(commandLine.out, Help.Ansi.OFF)
+        }
     }
 }
 

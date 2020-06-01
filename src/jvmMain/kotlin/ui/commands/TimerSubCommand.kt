@@ -25,4 +25,7 @@ abstract class TimerSubCommand : Runnable {
         set(timer) {
             applicationCommand.timer = timer
         }
+
+    protected val terminalScreen
+        get() = applicationCommand.terminalScreen
 }

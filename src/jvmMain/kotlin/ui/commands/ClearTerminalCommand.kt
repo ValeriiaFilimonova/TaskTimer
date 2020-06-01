@@ -2,20 +2,19 @@ package ui.commands
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.ParentCommand
-import kotlin.system.exitProcess
 import kotlin.time.ExperimentalTime
 
+// todo add ctrl+l
 @Command(
-    name = "quit",
-    description = ["Quit application"]
+    name = "clear",
+    description = ["Clears command input/output area"]
 )
 @ExperimentalTime
-class QuitAppCommand : Runnable {
+class ClearTerminalCommand : Runnable {
     @ParentCommand
     lateinit var applicationCommand: TimerApplicationCommand
 
     override fun run() {
-        applicationCommand.terminalScreen.close()
-        exitProcess(0)
+        applicationCommand.terminalScreen.clear()
     }
 }

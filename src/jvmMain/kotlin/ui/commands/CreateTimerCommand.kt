@@ -27,8 +27,7 @@ class CreateTimerCommand : TimerSubCommand() {
         names = ["-d", "--duration"],
         required = true,
         description = [
-            "Set timer duration. Format [NUMBER].[UNIT].",
-            "Supported units: ms, s, m, h, d."
+            "Set timer duration. Format [NUMBER].[UNIT]. Supported units: ms, s, m, h, d."
         ]
     )
     private lateinit var duration: MillisecondsTimeUnit
@@ -37,10 +36,7 @@ class CreateTimerCommand : TimerSubCommand() {
         names = ["-a", "--alarm"],
         defaultValue = "WISE_MASTER",
         description = [
-            "Set final alarm sound.",
-            "If set to NONE final alarm is skipped.",
-            "Supported values: \${COMPLETION-CANDIDATES}, NONE.",
-            "Defaults to \${DEFAULT-VALUE}."
+            "Set final alarm sound. If set to NONE final alarm is skipped. Defaults to \${DEFAULT-VALUE}. Supported values: \${COMPLETION-CANDIDATES}, NONE."
         ]
     )
     private var alarm: Sound? = null
@@ -48,7 +44,7 @@ class CreateTimerCommand : TimerSubCommand() {
     @Option(
         names = ["-i", "--interval"],
         defaultValue = "500.ms",
-        description = ["Set frequency of timer screen update.", "Defaults to \${DEFAULT-VALUE}."]
+        description = ["Set frequency of timer screen update. Defaults to \${DEFAULT-VALUE}."]
     )
     private var interval: MillisecondsTimeUnit? = null
 
