@@ -264,6 +264,8 @@ object JvmTerminalScreen : TerminalScreen {
         override var topRow: Int = 0
         override var bottomRow: Int = FIXED_NUMBER_OF_TIMER_ROWS
 
+        private val clearingString = " ".repeat(columns)
+
         init {
             displayTime(0)
         }
@@ -274,7 +276,9 @@ object JvmTerminalScreen : TerminalScreen {
             abs(timeLeftInMilliseconds).milliseconds.toComponents { days, hours, minutes, seconds, _ ->
                 val text = "${days.pad()}:${hours.pad()}:${minutes.pad()}:${seconds.pad()}"
 
-                screen.scrollLines(topRow, bottomRow, rows)
+                for (row in topRow..bottomRow) {
+                    graphics.putString(leftColumn, row, clearingString)
+                }
 
                 if (timeLeftInMilliseconds < 0) {
                     graphics.putString(4, middleRow, "-$text")

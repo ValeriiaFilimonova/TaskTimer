@@ -9,9 +9,9 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 fun main() {
-    val appCommand = TimerApplicationCommand()
-    val commandLine = CommandLine(appCommand).apply {
-        val terminalScreen = appCommand.terminalScreen.also {
+    val application = TimerApplicationCommand()
+    val commandLine = CommandLine(application).apply {
+        val terminalScreen = application.terminalScreen.also {
             it.setResizeListener { size ->
                 this.usageHelpWidth = size.columns
             }
@@ -19,6 +19,7 @@ fun main() {
 
         this.isCaseInsensitiveEnumValuesAllowed = true
         this.isUsageHelpAutoWidth = true
+        this.usageHelpWidth = terminalScreen.getSize().columns
         this.executionStrategy = CommandLine.RunLast()
         this.out = terminalScreen.getOutput()
         this.err = terminalScreen.getOutput()
@@ -30,14 +31,14 @@ fun main() {
         registerConverter(Sound::class.java, SoundConverter())
     }
 
-    appCommand.run()
+    application.run()
     commandLine.execute("help")
 
     while (true) {
         var args: Array<String>? = null
 
         try {
-            val commandInput = appCommand.readInput()
+            val commandInput = application.readInput()
 
             if (commandInput == null) {
                 Thread.sleep(10)
