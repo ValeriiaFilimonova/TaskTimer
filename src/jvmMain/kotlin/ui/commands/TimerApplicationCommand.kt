@@ -8,9 +8,7 @@ import kotlin.time.ExperimentalTime
 @Command(
     name = "timer",
     description = [
-        "Task timer command line application.",
-        "Allows configuring tasks to perform at a specific time or period.",
-        "Supports sound playing, speech synthesis.",
+        "Task timer command line application. Allows configuring tasks to perform at a specific time or period. Supports sound playing, speech synthesis.",
         "%nExamples:",
         "timer create --duration=5.m",
         "timer task --time=1.m --class=EVERY --action=SAY_TIME",
@@ -20,7 +18,7 @@ import kotlin.time.ExperimentalTime
     subcommands = [
         CreateTimerCommand::class, AddTaskTimerCommand::class,
         StartTimerCommand::class, StopTimerCommand::class, ResumeTimerCommand::class, PauseTimerCommand::class,
-        DefaultTimerCommand::class, PrintHelpCommand::class
+        DefaultTimerCommand::class, PrintHelpCommand::class, ClearTerminalCommand::class, QuitAppCommand::class
     ],
     descriptionHeading = "%nDescription:%n",
     commandListHeading = "%nCommands:%n"
@@ -31,6 +29,13 @@ class TimerApplicationCommand : Runnable {
 
     var timer: Timer? = null
 
+    val terminalScreen by lazy { DependenciesFactory.getTerminalScreen() }
+
     override fun run() {
+        terminalScreen.open()
+    }
+
+    fun readInput(): String? {
+        return terminalScreen.readCommand()
     }
 }

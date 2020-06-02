@@ -1,28 +1,41 @@
 package alerts.sound
 
 import JvmTimerError
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import alerts.Terminatable
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.Clip
 
-// TODO add loop and potentially refactor this logic
-object JvmSoundPlayer : Player {
+object JvmSoundPlayer : Player, Terminatable {
+    private val executor = Executors.newSingleThreadExecutor()
+    private var future: Future<*>? = null
+    private var clip: Clip? = null
+
     override fun playOnce(sound: Sound) {
-        GlobalScope.launch {
-            AudioSystem.getClip().use {
-                it.open(sound)
-                it.start()
-                delay(sound.duration)
-                it.stop()
-                it.close()
-            }
+        terminate()
+
+        future = executor.submit {
+            val newClip = AudioSystem.getClip().open(sound)
+            clip = newClip
+            newClip.start()
+            Thread.sleep(sound.duration)
+            newClip.stop()
+            newClip.close()
+        }
+    }
+
+    override fun terminate() {
+        future?.cancel(true)
+
+        if (clip?.isRunning == true) {
+            clip!!.stop()
+            clip!!.close()
         }
     }
 }
 
-fun Clip.open(sound: Sound) {
+fun Clip.open(sound: Sound): Clip {
     val resourceURL = sound.javaClass.classLoader.getResource(sound.resourceName)
 
     if (resourceURL == null) {
@@ -31,4 +44,5 @@ fun Clip.open(sound: Sound) {
 
     val audioInputStream = AudioSystem.getAudioInputStream(resourceURL)
     open(audioInputStream)
+    return this
 }

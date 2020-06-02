@@ -1,12 +1,14 @@
 package alerts.voice
 
+import alerts.Terminatable
 import java.io.Closeable
 import java.util.*
 import javax.speech.Central
+import javax.speech.EngineStateError
 import javax.speech.synthesis.Synthesizer
 import javax.speech.synthesis.SynthesizerModeDesc
 
-object JvmSpeechSynthesizer : Speaker, Closeable {
+object JvmSpeechSynthesizer : Speaker, Closeable, Terminatable {
     private const val tts = "com.sun.speech.freetts"
 
     private val synthesizer: Synthesizer
@@ -20,6 +22,8 @@ object JvmSpeechSynthesizer : Speaker, Closeable {
     }
 
     override fun say(text: String) {
+        terminate()
+
         if (synthesizer.engineState == Synthesizer.DEALLOCATED) {
             synthesizer.allocate()
         }
@@ -34,5 +38,12 @@ object JvmSpeechSynthesizer : Speaker, Closeable {
 
     override fun close() {
         synthesizer.deallocate()
+    }
+
+    override fun terminate() {
+        try {
+            synthesizer.cancelAll()
+        } catch (e: EngineStateError) {
+        }
     }
 }

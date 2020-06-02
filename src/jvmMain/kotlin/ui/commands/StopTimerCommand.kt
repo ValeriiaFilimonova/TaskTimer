@@ -2,12 +2,11 @@ package ui.commands
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.ParentCommand
-import ui.screen.TimerScreen
 import kotlin.time.ExperimentalTime
 
 @Command(
     name = "stop",
-    description = ["Stop currently running timer.", "This command also closes timer display screen if opened."]
+    description = ["Stop currently running timer"]
 )
 @ExperimentalTime
 class StopTimerCommand : TimerSubCommand(){
@@ -15,7 +14,6 @@ class StopTimerCommand : TimerSubCommand(){
     override lateinit var applicationCommand: TimerApplicationCommand
 
     override fun run() {
-        TimerScreen.hide()
         timer?.stop()
         timer = null
     }

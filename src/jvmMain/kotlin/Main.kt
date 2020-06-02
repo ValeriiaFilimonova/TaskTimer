@@ -1,47 +1,57 @@
 import alerts.sound.Sound
 import picocli.CommandLine
-import picocli.CommandLine.ExitCode
-import ui.commands.*
+import ui.commands.TimerApplicationCommand
 import ui.converters.SoundConverter
 import ui.converters.TimeDurationConverter
 import ui.handlers.ExecutionExceptionHandler
 import ui.handlers.ParameterExceptionHandler
-import java.util.*
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 fun main() {
-    val isDebug = System.getenv("DEBUG") == true.toString()
-    val commandPrefix = "timer> "
-    val input: Scanner = Scanner(System.`in`).useDelimiter("\n")
-    val appCommand = TimerApplicationCommand()
+    val application = TimerApplicationCommand()
+    val commandLine = CommandLine(application).apply {
+        val terminalScreen = application.terminalScreen.also {
+            it.setResizeListener { size ->
+                this.usageHelpWidth = size.columns
+            }
+        }
 
-    val commandLine = CommandLine(appCommand).also {
-        it.executionStrategy = CommandLine.RunLast()
-        it.executionExceptionHandler = ExecutionExceptionHandler()
-        it.parameterExceptionHandler = ParameterExceptionHandler()
+        this.isCaseInsensitiveEnumValuesAllowed = true
+        this.isUsageHelpAutoWidth = true
+        this.usageHelpWidth = terminalScreen.getSize().columns
+        this.executionStrategy = CommandLine.RunLast()
+        this.out = terminalScreen.getOutput()
+        this.err = terminalScreen.getOutput()
 
-        it.registerConverter(MillisecondsTimeUnit::class.java, TimeDurationConverter())
-        it.registerConverter(Sound::class.java, SoundConverter())
+        this.executionExceptionHandler = ExecutionExceptionHandler()
+        this.parameterExceptionHandler = ParameterExceptionHandler()
+
+        registerConverter(MillisecondsTimeUnit::class.java, TimeDurationConverter())
+        registerConverter(Sound::class.java, SoundConverter())
     }
 
+    application.run()
     commandLine.execute("help")
 
-    if (isDebug) {
-        print(commandPrefix)
-    }
-
     while (true) {
-        if (input.hasNext()) {
-            val cmd: String = input.next()
-            val args = cmd.split(Regex(" (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")).toTypedArray()
+        var args: Array<String>? = null
 
-            val exitCode = commandLine.execute(*args)
+        try {
+            val commandInput = application.readInput()
 
-            if (isDebug && exitCode == ExitCode.OK) {
-                Thread.sleep(100)
-                print(commandPrefix)
+            if (commandInput == null) {
+                Thread.sleep(10)
+                continue
             }
+
+            args = commandInput.split(Regex(" (?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")).toTypedArray()
+        } catch (e: Exception) {
+            commandLine.executionExceptionHandler.handleExecutionException(e, commandLine, null)
+        }
+
+        if (args != null) {
+            commandLine.execute(*args)
         }
     }
 }

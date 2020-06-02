@@ -12,9 +12,8 @@ import kotlin.time.ExperimentalTime
 @Command(
     name = "task",
     description = ["Add task for the current timer."],
-    headerHeading = "%n########################################################################%n",
-    synopsisHeading = "%n",
-    descriptionHeading = "%nDescription: ",
+    synopsisHeading = "%n%n",
+    descriptionHeading = "%nDescription:%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%nExamples:%n",
     footer = [
@@ -38,8 +37,7 @@ class AddTaskTimerCommand : TimerSubCommand() {
         names = ["-a", "--action"],
         required = true,
         description = [
-            "Set action to perform at the given time or with the given period.",
-            "Supported values: \${COMPLETION-CANDIDATES}."
+            "Set action to perform at the given time or with the given period. Supported values: \${COMPLETION-CANDIDATES}."
         ]
     )
     lateinit var action: Action
@@ -48,12 +46,11 @@ class AddTaskTimerCommand : TimerSubCommand() {
         names = ["-c", "--class"],
         defaultValue = "AT",
         description = [
-            "Set task class. Supported values:",
+            "Set task class. Defaults to \${DEFAULT-VALUE}. Supported values:",
             "AT - execute task at the given time from the timer start",
             "BEFORE_LEFT - execute the task before given time left till the timer end",
             "EVERY - execute the task with the given period",
-            "AFTER_FINISH_EVERY - execute that with the given period after timer is finished but not stopped",
-            "Defaults to \${DEFAULT-VALUE}."
+            "AFTER_FINISH_EVERY - execute that with the given period after timer is finished but not stopped"
         ]
     )
     lateinit var type: TaskClass
@@ -61,8 +58,7 @@ class AddTaskTimerCommand : TimerSubCommand() {
     @Option(
         names = ["-s", "--sound"],
         description = [
-            "Sound to play on PLAY_SOUND action",
-            "Supported values: \${COMPLETION-CANDIDATES}."
+            "Sound to play on PLAY_SOUND action. Supported values: \${COMPLETION-CANDIDATES}."
         ]
     )
     var sound: Sound? = null
@@ -76,16 +72,14 @@ class AddTaskTimerCommand : TimerSubCommand() {
     @Option(
         names = ["-d", "--delay"],
         description = [
-            "Set delay for repeatable task.",
-            "Task starts after the given time elapsed.",
-            "Defaults to task time."
+            "Set delay for repeatable task. Task starts after the given time elapsed. Defaults to task time."
         ]
     )
     var delay: MillisecondsTimeUnit? = null
 
     @Option(
         names = ["-f", "--finish"],
-        description = ["Set repeatable task finish time.", "Defaults to the timer duration."]
+        description = ["Set repeatable task finish time. Defaults to the timer duration."]
     )
     var finish: MillisecondsTimeUnit? = null
 
