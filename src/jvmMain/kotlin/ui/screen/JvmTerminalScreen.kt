@@ -274,7 +274,7 @@ object JvmTerminalScreen : TerminalScreen {
             abs(timeLeftInMilliseconds).milliseconds.toComponents { days, hours, minutes, seconds, _ ->
                 val text = "${days.pad()}:${hours.pad()}:${minutes.pad()}:${seconds.pad()}"
 
-                graphics.putString(4, middleRow - 1, " ".repeat(12))
+                screen.scrollLines(topRow, bottomRow, rows)
 
                 if (timeLeftInMilliseconds < 0) {
                     graphics.putString(4, middleRow, "-$text")
@@ -365,6 +365,7 @@ object JvmTerminalScreen : TerminalScreen {
             }
         }
 
+        // TODO fix long input
         private fun printCharacter(char: Char) {
             lastCommand.append(char)
             graphics.setCharacter(cursorPosition, char)

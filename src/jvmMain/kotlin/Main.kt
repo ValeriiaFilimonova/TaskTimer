@@ -5,7 +5,6 @@ import ui.converters.SoundConverter
 import ui.converters.TimeDurationConverter
 import ui.handlers.ExecutionExceptionHandler
 import ui.handlers.ParameterExceptionHandler
-import java.lang.Exception
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime

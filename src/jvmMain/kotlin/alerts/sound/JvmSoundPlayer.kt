@@ -1,12 +1,13 @@
 package alerts.sound
 
 import JvmTimerError
+import alerts.Terminatable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.Clip
 
-object JvmSoundPlayer : Player {
+object JvmSoundPlayer : Player, Terminatable {
     private val executor = Executors.newSingleThreadExecutor()
     private var future: Future<*>? = null
     private var clip: Clip? = null
@@ -15,18 +16,16 @@ object JvmSoundPlayer : Player {
         terminate()
 
         future = executor.submit {
-            val newClip = AudioSystem.getClip().apply {
-                open(sound)
-                start()
-            }
+            val newClip = AudioSystem.getClip().open(sound)
             clip = newClip
+            newClip.start()
             Thread.sleep(sound.duration)
             newClip.stop()
             newClip.close()
         }
     }
 
-    fun terminate() {
+    override fun terminate() {
         future?.cancel(true)
 
         if (clip?.isRunning == true) {
@@ -36,7 +35,7 @@ object JvmSoundPlayer : Player {
     }
 }
 
-fun Clip.open(sound: Sound) {
+fun Clip.open(sound: Sound): Clip {
     val resourceURL = sound.javaClass.classLoader.getResource(sound.resourceName)
 
     if (resourceURL == null) {
@@ -45,4 +44,5 @@ fun Clip.open(sound: Sound) {
 
     val audioInputStream = AudioSystem.getAudioInputStream(resourceURL)
     open(audioInputStream)
+    return this
 }
